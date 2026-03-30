@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealMaps | Smart Healthcare Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body style="background: #F8F9F9;">
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <i class="fa fa-heart-pulse"></i> HealMaps
+            </a>
+            <ul class="nav-links">
+                <li><a href="/dashboard">Home</a></li>
+                <li><a href="#hospitals">Find Hospital</a></li>
+                <li><a href="#emergency">Emergency</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+            <div class="flex" style="gap: 20px;">
+                <span id="user-display" style="font-size: 0.9rem;">
+                    Hello, <strong id="user-name">User</strong>
+                </span>
+                <button class="btn btn-outline" style="padding: 8px 20px; font-size: 0.8rem; border-color: white; color: white;" onclick="handleLogout()">LOGOUT</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero-gradient" style="padding: 100px 0 150px 0; text-align: center;">
+        <div class="container">
+            <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px;">Smart Emergency Healthcare</h1>
+            <p style="font-size: 1.2rem; max-width: 700px; margin: 0 auto 40px auto; opacity: 0.9;">
+                Real-time hospital availability tracking, priority-based emergency routing, and personalized health insights.
+            </p>
+            <div class="flex" style="justify-content: center; gap: 20px;">
+                <a href="#hospitals" class="btn btn-primary" style="background: white; color: var(--primary-color);">Find Nearest Hospital</a>
+                <a href="#emergency" class="btn btn-emergency">EMERGENCY SOS</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        
+        <!-- Stats Row -->
+        <section class="stats-grid">
+            <div class="glass-card" onclick="toggleModal('stressModal', true)" style="cursor: pointer;">
+                <div class="stat-icon" style="background: rgba(26, 188, 156, 0.1); color: var(--primary-color);">
+                    <i class="fa fa-brain"></i>
+                </div>
+                <h4 style="color: #777;">Stress Level</h4>
+                <h2 id="stress-val">0%</h2>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: var(--primary-color);">Click for AI tips</div>
+            </div>
+            
+            <div class="glass-card">
+                <div class="stat-icon" style="background: rgba(52, 152, 219, 0.1); color: #3498DB;">
+                    <i class="fa fa-chart-line"></i>
+                </div>
+                <h4 style="color: #777;">Productivity</h4>
+                <h2 id="prod-val">0%</h2>
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #3498DB;">Trending up</div>
+            </div>
+            
+            <div class="glass-card">
+                <div class="stat-icon" style="background: rgba(155, 89, 182, 0.1); color: #9B59B6;">
+                    <i class="fa fa-bed"></i>
+                </div>
+                <h4 style="color: #777;">Sleep Duration</h4>
+                <h2 id="sleep-val">0 hrs</h2>
+                <div id="sleep-status" style="margin-top: 10px; font-size: 0.8rem; color: #9B59B6;">(Good)</div>
+            </div>
+        </section>
+
+        <!-- Hospital Finder -->
+        <section id="hospitals" style="margin-top: 80px;">
+            <div class="flex" style="justify-content: space-between; margin-bottom: 30px;">
+                <h2>Hospital Resource Finder</h2>
+                <button class="btn btn-primary" onclick="useMyLocation()">
+                    <i class="fa fa-location-crosshairs"></i> Use My Location
+                </button>
+            </div>
+            <div class="glass-card" style="margin-bottom: 30px;">
+                <div class="flex" style="gap: 15px;">
+                    <input type="text" placeholder="Search city or hospital name..." style="padding: 12px; flex: 1; border: 1px solid #ddd; border-radius: 8px;">
+                    <button class="btn btn-primary">SEARCH</button>
+                </div>
+            </div>
+            <div id="hospital-list" class="hospital-list">
+                <!-- Hospital Cards injected via JS -->
+            </div>
+        </section>
+
+        <!-- Emergency & Health Data Grid -->
+        <div class="charts-grid" style="margin-top: 80px; align-items: start;">
+            
+            <!-- Emergency Form -->
+            <section id="emergency" class="glass-card">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                    <div class="stat-icon btn-emergency" style="width: 40px; height: 40px; font-size: 1.2rem; margin: 0; animation: none;">
+                        <i class="fa fa-ambulance"></i>
+                    </div>
+                    <h2>Emergency Request</h2>
+                </div>
+                <form id="emergency-form" onsubmit="handleEmergency(event)">
+                    <div class="form-group">
+                        <label>Patient Name</label>
+                        <input type="text" name="patient_name" placeholder="Full name of patient" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <select name="priority" required>
+                            <option value="low">Low (Non-urgent)</option>
+                            <option value="medium" selected>Medium (Standard)</option>
+                            <option value="high">High (Urgent)</option>
+                            <option value="critical">Critical (Life Threatening)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description (AOA: Priority Queue)</label>
+                        <textarea name="description" placeholder="Symptoms or immediate needs..." rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-emergency" style="width: 100%; animation: none;">SEND REQUEST</button>
+                </form>
+            </section>
+
+            <!-- Chart Section -->
+            <section class="glass-card">
+                <h2>Health Analytics</h2>
+                <div style="margin-top: 25px;">
+                    <p style="font-size: 0.9rem; color: #777; margin-bottom: 10px;">Sleep Trend (Last 7 Days)</p>
+                    <canvas id="sleepChart" height="150"></canvas>
+                </div>
+                <div style="margin-top: 30px;">
+                    <p style="font-size: 0.9rem; color: #777; margin-bottom: 10px;">Steps Activity (Bar Chart)</p>
+                    <canvas id="stepsChart" height="150"></canvas>
+                </div>
+            </section>
+
+            <!-- Quick Pulse & Screen Time -->
+            <section class="glass-card">
+                <h2>AI Wellness Score</h2>
+                <div style="text-align: center; margin-top: 30px;">
+                    <canvas id="screenChart" style="max-width: 200px; margin: 0 auto;"></canvas>
+                    <div style="margin-top: 20px;">
+                        <h3>4.5 hrs</h3>
+                        <p style="color: #777; font-size: 0.9rem;">Daily Screen Time Average</p>
+                    </div>
+                </div>
+                <div style="margin-top: 40px;">
+                  <button class="btn btn-outline" style="width: 100%; margin-bottom: 15px;" onclick="toggleModal('healthModal', true)">Log New Entry</button>
+                  <a href="/contact" class="btn btn-primary" style="width: 100%; display: block;">Get Wellness Advice</a>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: var(--accent-color); color: white; padding: 60px 0 30px 0; margin-top: 100px;">
+        <div class="container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 50px;">
+            <div>
+                <h3>HealMaps</h3>
+                <p style="opacity: 0.7; font-size: 0.9rem; margin-top: 15px;">Smart Healthcare management systems powered by AI and real-time data.</p>
+            </div>
+            <div>
+                <h4>Company</h4>
+                <ul style="margin-top: 15px; font-size: 0.9rem; opacity: 0.7;">
+                    <li><a href="/about">About Us</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Support</h4>
+                <ul style="margin-top: 15px; font-size: 0.9rem; opacity: 0.7;">
+                    <li><a href="#">Help Center</a></li>
+                    <li><a href="#">Emergency FAQ</a></li>
+                    <li><a href="#">API Docs</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Stay Connected</h4>
+                <div class="flex" style="gap: 15px; margin-top: 15px;">
+                    <i class="fab fa-twitter"></i>
+                    <i class="fab fa-linkedin"></i>
+                    <i class="fab fa-github"></i>
+                </div>
+            </div>
+        </div>
+        <div class="container" style="text-align: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; font-size: 0.8rem; opacity: 0.5;">
+            &copy; 2024 HealMaps — All Rights Reserved. Built with Flask, Javascript & AI.
+        </div>
+    </footer>
+
+    <!-- Modals -->
+    <div id="stressModal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <h2>Wellness Insights</h2>
+            <div style="margin-top: 20px;">
+                <p>Based on your current stress level (<strong>44%</strong>), our AI recommends:</p>
+                <ul style="margin-top: 15px; display: grid; gap: 10px;">
+                    <li><i class="fa fa-check-circle" style="color: var(--primary-color);"></i> 10-minute mindful breathing</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--primary-color);"></i> Reducing screen time by 1 hour</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--primary-color);"></i> Prioritizing 8 hours of sleep tonight</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 30px;" onclick="toggleModal('stressModal', false)">GOT IT</button>
+        </div>
+    </div>
+
+    <!-- Health Entry Modal -->
+    <div id="healthModal" class="modal-overlay">
+        <div class="modal-content glass-card">
+            <h2>Add Health Entry</h2>
+            <form id="health-entry-form" onsubmit="handleHealthEntry(event)" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>Stress Level (0-100)</label>
+                    <input type="number" name="stress_level" min="0" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Productivity Score (0-100)</label>
+                    <input type="number" name="productivity_score" min="0" max="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Sleep Hours</label>
+                    <input type="number" step="0.5" name="sleep_hours" required>
+                </div>
+                <div class="form-group">
+                    <label>Steps Count</label>
+                    <input type="number" name="steps" required>
+                </div>
+                <div class="form-group">
+                   <label>Screen Time (Hours)</label>
+                   <input type="number" step="0.1" name="screen_time_hours" required>
+               </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">SAVE DATA</button>
+            </form>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('healthModal', false)">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealMaps | Create Your Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="split-screen">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div style="text-align: center;">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HealMaps Logo" style="width: 120px; margin-bottom: 20px;">
+                <h1 style="color: white; font-size: 3rem;">HealMaps</h1>
+                <p style="font-size: 1.2rem; opacity: 0.9;">Join the Smart Emergency Healthcare Network</p>
+            </div>
+            <div style="margin-top: 50px; font-size: 0.9rem; opacity: 0.7;">
+                &copy; 2024 HealMaps AI Systems
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="form-container glass-card">
+                <h2 style="margin-bottom: 10px;">Create Account</h2>
+                <p style="margin-bottom: 30px; color: #777;">Enter your details to join healmaps</p>
+                
+                <form id="signup-form" onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">CREATE ACCOUNT</button>
+                </form>
+                
+                <div style="margin-top: 25px; text-align: center; font-size: 0.9rem;">
+                    Already have an account? <a href="/" style="color: var(--primary-color); font-weight: 600;">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
