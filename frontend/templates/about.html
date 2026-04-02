@@ -8,31 +8,60 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
+<body class="has-sidebar">
     <div class="bg-mesh"></div>
 
-    <!-- Navbar -->
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="sidebar-logo">
+                <i class="fa fa-heart-pulse"></i>
+                <span>HealMaps</span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Main</div>
+            <a href="/dashboard"><i class="fa fa-grid-2"></i> Dashboard</a>
+            <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
+            <a href="/dashboard#emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+
+            <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
+            <a href="/about" class="active"><i class="fa fa-circle-info"></i> About Us</a>
+            <a href="/contact"><i class="fa fa-envelope"></i> Contact</a>
+            <a href="/profile"><i class="fa fa-user"></i> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">User</div>
+                    <div class="user-email-sidebar" id="user-email">user@email.com</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fas fa-sun"></i> Theme
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Mobile-only top bar -->
     <nav class="navbar" id="navbar">
-        <div class="container nav-container">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
+                <i class="fa fa-bars"></i>
+            </button>
             <a href="/dashboard" class="nav-logo">
                 <i class="fa fa-heart-pulse"></i>
                 <span>HealMaps</span>
             </a>
-            <div class="nav-links" id="nav-links">
-                <a href="/dashboard">Dashboard</a>
-                <a href="/hospitals">Find Hospital</a>
-                <a href="/about" class="active">About</a>
-                <a href="/contact">Contact</a>
-            </div>
-            <div class="nav-right">
-                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
-                    <i class="fa fa-moon"></i>
-                </button>
-                <a href="/" class="btn btn-sm btn-primary">Sign In</a>
-                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
+            <div style="width: 40px;"></div>
         </div>
     </nav>
 

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Your HealMaps Profile — manage your account, view health history, and track emergency bookings.">
+    <title>HealMaps | My Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/dashboard" class="sidebar-logo">
+                <i class="fa fa-heart-pulse"></i>
+                <span>HealMaps</span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Main</div>
+            <a href="/dashboard"><i class="fa fa-grid-2"></i> Dashboard</a>
+            <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
+            <a href="/dashboard#emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+
+            <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
+            <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
+            <a href="/contact"><i class="fa fa-envelope"></i> Contact</a>
+            <a href="/profile" class="active"><i class="fa fa-user"></i> Profile</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">User</div>
+                    <div class="user-email-sidebar" id="user-email">user@email.com</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fas fa-sun"></i> Theme
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Mobile-only top bar -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
+                <i class="fa fa-bars"></i>
+            </button>
+            <a href="/dashboard" class="nav-logo">
+                <i class="fa fa-heart-pulse"></i>
+                <span>HealMaps</span>
+            </a>
+            <div style="width: 40px;"></div>
+        </div>
+    </nav>
+
+    <!-- Profile Hero -->
+    <header class="hero" style="padding: 60px 0 40px 0;">
+        <div class="particles" id="particles"></div>
+        <div class="hero-content container" style="text-align: center;">
+            <div id="profile-avatar-big" style="width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--blue)); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.2rem; font-weight: 700; margin: 0 auto 16px auto; border: 4px solid rgba(255,255,255,0.3);">U</div>
+            <h1 id="profile-hero-name" style="font-size: 2rem;">Loading...</h1>
+            <p id="profile-hero-email" style="opacity: 0.8;">loading email...</p>
+        </div>
+    </header>
+
+    <main class="container" style="padding-bottom: 60px;">
+
+        <!-- Stats Row -->
+        <section class="stats-grid" style="margin-top: -30px; margin-bottom: 40px;">
+            <div class="glass-card stat-card reveal">
+                <div class="stat-header">
+                    <div class="stat-icon teal"><i class="fa fa-bed"></i></div>
+                </div>
+                <div class="stat-label">Bed Bookings</div>
+                <div class="stat-value" id="profile-bookings">0</div>
+            </div>
+            <div class="glass-card stat-card reveal reveal-delay-1">
+                <div class="stat-header">
+                    <div class="stat-icon rose"><i class="fa fa-ambulance"></i></div>
+                </div>
+                <div class="stat-label">Emergency Requests</div>
+                <div class="stat-value" id="profile-emergencies">0</div>
+            </div>
+            <div class="glass-card stat-card reveal reveal-delay-2">
+                <div class="stat-header">
+                    <div class="stat-icon blue"><i class="fa fa-chart-line"></i></div>
+                </div>
+                <div class="stat-label">Wellness Score</div>
+                <div class="stat-value" id="profile-wellness">—</div>
+            </div>
+            <div class="glass-card stat-card reveal reveal-delay-3">
+                <div class="stat-header">
+                    <div class="stat-icon purple"><i class="fa fa-calendar-check"></i></div>
+                </div>
+                <div class="stat-label">Member Since</div>
+                <div class="stat-value" id="profile-joined" style="font-size: 1.4rem;">—</div>
+            </div>
+        </section>
+
+        <!-- Profile Details Grid -->
+        <div class="charts-grid" style="align-items: start;">
+
+            <!-- Account Info -->
+            <section class="glass-card reveal">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+                    <div class="stat-icon teal" style="animation: none;">
+                        <i class="fa fa-user-gear"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin-bottom: 2px;">Account Details</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Your personal information</p>
+                    </div>
+                </div>
+                <div style="display: grid; gap: 20px;">
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="profile-name-input" placeholder="Your name" readonly
+                               style="background: var(--bg-primary); cursor: default;">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" id="profile-email-input" placeholder="Your email" readonly
+                               style="background: var(--bg-primary); cursor: default;">
+                    </div>
+                    <div class="form-group">
+                        <label>Account ID</label>
+                        <input type="text" id="profile-id-input" placeholder="—" readonly
+                               style="background: var(--bg-primary); cursor: default;">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Latest Health Snapshot -->
+            <section class="glass-card reveal reveal-delay-1">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+                    <div class="stat-icon blue" style="animation: none;">
+                        <i class="fa fa-heart-pulse"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin-bottom: 2px;">Latest Health Snapshot</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Your most recent health entry</p>
+                    </div>
+                </div>
+                <div id="profile-health-details" style="display: grid; gap: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-brain" style="color: var(--teal); width: 20px;"></i> Stress Level</span>
+                        <strong id="prof-stress">—</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-chart-line" style="color: var(--blue); width: 20px;"></i> Productivity</span>
+                        <strong id="prof-productivity">—</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-bed" style="color: var(--purple); width: 20px;"></i> Sleep</span>
+                        <strong id="prof-sleep">—</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-shoe-prints" style="color: var(--amber); width: 20px;"></i> Steps</span>
+                        <strong id="prof-steps">—</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-display" style="color: var(--rose); width: 20px;"></i> Screen Time</span>
+                        <strong id="prof-screen">—</strong>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 12px;">
+                    <a href="/dashboard" class="btn btn-primary btn-sm" style="flex: 1;">
+                        <i class="fa fa-grid-2"></i> Go to Dashboard
+                    </a>
+                    <a href="/hospitals" class="btn btn-outline btn-sm" style="flex: 1;">
+                        <i class="fa fa-hospital"></i> Find Hospitals
+                    </a>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="glass-card reveal reveal-delay-2">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+                    <div class="stat-icon purple" style="animation: none;">
+                        <i class="fa fa-bolt"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin-bottom: 2px;">Quick Actions</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Frequently used features</p>
+                    </div>
+                </div>
+                <div style="display: grid; gap: 12px;">
+                    <a href="/hospitals" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest Hospital
+                    </a>
+                    <a href="/dashboard#emergency" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS Request
+                    </a>
+                    <a href="/dashboard" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;" onclick="toggleModal('healthModal', true); return false;">
+                        <i class="fa fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health Entry
+                    </a>
+                    <a href="/about" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-circle-info" style="color: var(--purple); width: 20px;"></i> About HealMaps
+                    </a>
+                    <a href="/contact" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-envelope" style="color: var(--amber); width: 20px;"></i> Contact Support
+                    </a>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                &copy; 2024 HealMaps — All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Load Profile Data
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const data = await apiFetch('/user/profile');
+                const user = data.user;
+
+                // Hero
+                const bigAvatar = document.getElementById('profile-avatar-big');
+                if (bigAvatar) bigAvatar.innerText = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+                const heroName = document.getElementById('profile-hero-name');
+                if (heroName) heroName.innerText = user.name || 'User';
+                const heroEmail = document.getElementById('profile-hero-email');
+                if (heroEmail) heroEmail.innerText = user.email || '';
+
+                // Stats
+                document.getElementById('profile-bookings').innerText = data.bed_bookings || 0;
+                document.getElementById('profile-emergencies').innerText = data.emergency_requests || 0;
+
+                // Account details
+                document.getElementById('profile-name-input').value = user.name || '';
+                document.getElementById('profile-email-input').value = user.email || '';
+                document.getElementById('profile-id-input').value = '#' + user.id;
+
+                // Latest health
+                const h = data.latest_health;
+                if (h) {
+                    document.getElementById('prof-stress').innerText = h.stress_level + '%';
+                    document.getElementById('prof-productivity').innerText = h.productivity_score + '%';
+                    document.getElementById('prof-sleep').innerText = h.sleep_hours + ' hrs';
+                    document.getElementById('prof-steps').innerText = Number(h.steps).toLocaleString();
+                    document.getElementById('prof-screen').innerText = h.screen_time_hours + ' hrs';
+
+                    // Wellness score = 100 - stress + productivity / 2
+                    const wellness = Math.round((100 - h.stress_level + h.productivity_score) / 2);
+                    document.getElementById('profile-wellness').innerText = wellness + '%';
+                }
+
+            } catch (err) {
+                console.error('Profile load failed:', err);
+            }
+        });
+    </script>
+</body>
+</html>

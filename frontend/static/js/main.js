@@ -28,12 +28,13 @@ function toggleTheme() {
 }
 
 function updateThemeIcon(theme) {
-  const btn = document.getElementById('theme-toggle-btn');
-  if (!btn) return;
-  const icon = btn.querySelector('i');
-  if (icon) {
-    icon.className = theme === 'dark' ? 'fa fa-sun' : 'fa fa-moon';
-  }
+  // Update ALL theme toggle buttons on the page
+  document.querySelectorAll('#theme-toggle-btn, .theme-toggle').forEach(btn => {
+    const icon = btn.querySelector('i');
+    if (icon) {
+      icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    }
+  });
 }
 
 function initTheme() {
@@ -86,10 +87,19 @@ async function apiFetch(endpoint, options = {}) {
 async function checkSession() {
   try {
     const user = await apiFetch('/user');
-    const nameEl = document.getElementById('user-name');
-    const avatarEl = document.getElementById('user-avatar');
-    if (nameEl) nameEl.innerText = user.name;
-    if (avatarEl) avatarEl.innerText = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+    // Update all user name elements
+    document.querySelectorAll('#user-name, .user-name-sidebar').forEach(el => {
+      el.innerText = user.name;
+    });
+    // Update all avatars
+    document.querySelectorAll('#user-avatar, .user-avatar').forEach(el => {
+      if (!el.querySelector('i')) { // Skip elements with icons inside
+        el.innerText = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+      }
+    });
+    // Update email
+    const emailEl = document.getElementById('user-email');
+    if (emailEl) emailEl.innerText = user.email || 'user@email.com';
     return user;
   } catch (err) {
     // If on protected pages, redirect
@@ -721,8 +731,15 @@ function togglePassword(inputId, toggle) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MOBILE MENU
+// SIDEBAR TOGGLE
 // ═══════════════════════════════════════════════════════════
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar) sidebar.classList.toggle('show');
+  if (overlay) overlay.classList.toggle('show');
+}
+
 function toggleMobileMenu() {
   const links = document.getElementById('nav-links');
   const hamburger = document.getElementById('hamburger');

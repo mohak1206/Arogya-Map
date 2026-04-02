@@ -94,6 +94,10 @@ def about():
 def contact():
     return render_template('contact.html')
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # AUTH API ROUTES
