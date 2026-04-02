@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HealMaps — Login to your Smart Healthcare Dashboard for real-time hospital tracking and emergency management.">
+    <title>HealMaps | Smart Healthcare Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="split-screen">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="particles" id="particles"></div>
+            <div class="left-panel-content">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HealMaps Logo" style="width: 100px; margin-bottom: 24px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.2));">
+                <h1>HealMaps</h1>
+                <p>Smart Emergency & Hospital Resource Management powered by AI algorithms</p>
+                <div style="margin-top: 48px; display: flex; gap: 24px; justify-content: center;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 800;">8+</div>
+                        <div style="font-size: 0.8rem; opacity: 0.7;">Hospitals</div>
+                    </div>
+                    <div style="width: 1px; background: rgba(255,255,255,0.2);"></div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 800;">24/7</div>
+                        <div style="font-size: 0.8rem; opacity: 0.7;">Monitoring</div>
+                    </div>
+                    <div style="width: 1px; background: rgba(255,255,255,0.2);"></div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 800;">AI</div>
+                        <div style="font-size: 0.8rem; opacity: 0.7;">Powered</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="form-container glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2>Welcome Back</h2>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+                        <i class="fa fa-moon"></i>
+                    </button>
+                </div>
+                <p class="form-subtitle">Access your healthcare dashboard</p>
+
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                        <i class="fa fa-eye password-toggle" onclick="togglePassword('password', this)"></i>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="login-btn">
+                        <i class="fa fa-arrow-right-to-bracket"></i> SIGN IN
+                    </button>
+                </form>
+
+                <div style="margin-top: 28px; text-align: center; font-size: 0.9rem;">
+                    Don't have an account?
+                    <a href="/signup" style="color: var(--teal); font-weight: 600;">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

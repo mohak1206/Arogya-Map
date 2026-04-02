@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="HealMaps Dashboard — Real-time hospital tracking, health analytics, and emergency management.">
+    <title>HealMaps | Smart Healthcare Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <i class="fa fa-heart-pulse"></i>
+                <span>HealMaps</span>
+            </a>
+            <div class="nav-links" id="nav-links">
+                <a href="/dashboard" class="active">Dashboard</a>
+                <a href="/hospitals">Find Hospital</a>
+                <a href="#emergency">Emergency</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+            <div class="nav-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+                    <i class="fa fa-moon"></i>
+                </button>
+                <div class="user-badge" id="user-badge">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <span id="user-name">User</span>
+                </div>
+                <button class="btn btn-sm btn-outline" onclick="handleLogout()" id="logout-btn">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="particles" id="particles"></div>
+        <div class="hero-content container">
+            <h1>Smart Emergency Healthcare</h1>
+            <p>Real-time hospital availability tracking, priority-based emergency routing, and personalized AI-driven health insights.</p>
+            <div class="hero-actions">
+                <a href="/hospitals" class="btn btn-primary" id="find-hospital-btn">
+                    <i class="fa fa-hospital"></i> Find Nearest Hospital
+                </a>
+                <a href="#emergency" class="btn btn-emergency" id="sos-btn">
+                    <i class="fa fa-phone-volume"></i> EMERGENCY SOS
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- Stats Row -->
+        <section class="stats-grid">
+            <div class="glass-card stat-card reveal" onclick="toggleModal('stressModal', true)">
+                <div class="stat-header">
+                    <div class="stat-icon teal"><i class="fa fa-brain"></i></div>
+                    <div class="stat-trend up"><i class="fa fa-arrow-down"></i> Improving</div>
+                </div>
+                <div class="stat-label">Stress Level</div>
+                <div class="stat-value" id="stress-val">0%</div>
+                <div style="font-size: 0.8rem; color: var(--teal); cursor: pointer;">
+                    <i class="fa fa-wand-magic-sparkles"></i> Click for AI tips
+                </div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-1">
+                <div class="stat-header">
+                    <div class="stat-icon blue"><i class="fa fa-chart-line"></i></div>
+                    <div class="stat-trend up" id="prod-trend"><i class="fa fa-arrow-up"></i> Trending up</div>
+                </div>
+                <div class="stat-label">Productivity</div>
+                <div class="stat-value" id="prod-val">0%</div>
+                <div style="font-size: 0.8rem; color: var(--blue);">Performance score</div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-2">
+                <div class="stat-header">
+                    <div class="stat-icon purple"><i class="fa fa-bed"></i></div>
+                    <div class="stat-trend" id="sleep-trend"><i class="fa fa-minus"></i> Average</div>
+                </div>
+                <div class="stat-label">Sleep Duration</div>
+                <div class="stat-value" id="sleep-val">0 hrs</div>
+                <div id="sleep-status" style="font-size: 0.8rem; color: var(--purple);">sleep quality</div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-3">
+                <div class="stat-header">
+                    <div class="stat-icon amber"><i class="fa fa-shoe-prints"></i></div>
+                    <div class="stat-trend up" id="steps-trend"><i class="fa fa-arrow-up"></i> Active</div>
+                </div>
+                <div class="stat-label">Steps Today</div>
+                <div class="stat-value" id="steps-val">0</div>
+                <div style="font-size: 0.8rem; color: var(--amber);">Daily activity</div>
+            </div>
+        </section>
+
+        <!-- Hospital Finder Quick Section -->
+        <section id="hospitals-section" style="margin-top: 80px;" class="reveal">
+            <div class="flex" style="justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+                <div>
+                    <h2 class="section-title">Nearby Hospitals</h2>
+                    <p class="section-subtitle" style="margin-bottom: 0;">Real-time bed availability in your area</p>
+                </div>
+                <div class="flex" style="gap: 12px;">
+                    <button class="btn btn-primary" onclick="useMyLocation()" id="location-btn">
+                        <i class="fa fa-location-crosshairs"></i> Use My Location
+                    </button>
+                    <a href="/hospitals" class="btn btn-outline">
+                        <i class="fa fa-hospital"></i> View All
+                    </a>
+                </div>
+            </div>
+            <div class="search-bar">
+                <input type="text" id="hospital-search" placeholder="Search hospitals by name, city, or speciality..." oninput="debounceSearch(this.value)">
+                <button class="btn btn-primary" onclick="searchHospitals()" id="search-btn">
+                    <i class="fa fa-search"></i> Search
+                </button>
+            </div>
+            <div id="hospital-list" class="hospital-grid">
+                <!-- Hospital Cards injected via JS -->
+            </div>
+        </section>
+
+        <!-- Emergency & Health Data Grid -->
+        <div class="charts-grid" style="margin-top: 80px; align-items: start;">
+
+            <!-- Emergency Form -->
+            <section id="emergency" class="glass-card reveal">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
+                    <div class="stat-icon rose" style="animation: none;">
+                        <i class="fa fa-ambulance"></i>
+                    </div>
+                    <div>
+                        <h2 style="margin-bottom: 2px;">Emergency Request</h2>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Priority-based hospital assignment</p>
+                    </div>
+                </div>
+                <form id="emergency-form" onsubmit="handleEmergency(event)">
+                    <div class="form-group">
+                        <label>Patient Name</label>
+                        <input type="text" name="patient_name" placeholder="Full name of patient" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <select name="priority" required>
+                            <option value="low">🟢 Low (Non-urgent)</option>
+                            <option value="medium" selected>🟡 Medium (Standard)</option>
+                            <option value="high">🟠 High (Urgent)</option>
+                            <option value="critical">🔴 Critical (Life Threatening)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea name="description" placeholder="Symptoms or immediate needs..." rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-emergency" style="width: 100%; animation: none;" id="send-emergency-btn">
+                        <i class="fa fa-paper-plane"></i> SEND EMERGENCY REQUEST
+                    </button>
+                </form>
+            </section>
+
+            <!-- Charts -->
+            <section class="glass-card reveal reveal-delay-1">
+                <h2 style="margin-bottom: 24px;">Health Analytics</h2>
+                <div>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                        <i class="fa fa-chart-area"></i> Sleep Trend (Last 7 Days)
+                    </p>
+                    <canvas id="sleepChart" height="140"></canvas>
+                </div>
+                <div style="margin-top: 32px;">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">
+                        <i class="fa fa-chart-bar"></i> Steps Activity
+                    </p>
+                    <canvas id="stepsChart" height="140"></canvas>
+                </div>
+            </section>
+
+            <!-- Wellness Score -->
+            <section class="glass-card reveal reveal-delay-2">
+                <h2 style="margin-bottom: 24px;">AI Wellness Score</h2>
+                <div style="text-align: center; margin-top: 24px;">
+                    <canvas id="screenChart" style="max-width: 180px; margin: 0 auto;"></canvas>
+                    <div style="margin-top: 20px;">
+                        <h3 id="screen-time-val">0 hrs</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Daily Screen Time</p>
+                    </div>
+                </div>
+                <div style="margin-top: 36px; display: grid; gap: 12px;">
+                    <button class="btn btn-outline" style="width: 100%;" onclick="toggleModal('healthModal', true)" id="log-entry-btn">
+                        <i class="fa fa-plus-circle"></i> Log New Entry
+                    </button>
+                    <a href="/contact" class="btn btn-primary" style="width: 100%;">
+                        <i class="fa fa-message"></i> Get Wellness Advice
+                    </a>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> HealMaps</h3>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics for emergency response.</p>
+                    <div class="social-links" style="margin-top: 20px;">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="/hospitals">Find Hospital</a></li>
+                        <li><a href="/dashboard">Dashboard</a></li>
+                        <li><a href="#emergency">Emergency SOS</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Emergency FAQ</a></li>
+                        <li><a href="#">API Docs</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2024 HealMaps — All Rights Reserved. Built with Flask, JavaScript & AI.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Stress Modal -->
+    <div id="stressModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-wand-magic-sparkles" style="color: var(--teal);"></i> Wellness Insights</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('stressModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div id="stress-tips">
+                <p>Based on your current stress level, our AI recommends:</p>
+                <ul style="margin-top: 16px; display: grid; gap: 12px;" id="stress-tip-list">
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> 10-minute mindful breathing</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Reducing screen time by 1 hour</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Prioritizing 8 hours of sleep tonight</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Take a 15-minute walk outside</li>
+                </ul>
+            </div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 28px;" onclick="toggleModal('stressModal', false)">GOT IT</button>
+        </div>
+    </div>
+
+    <!-- Health Entry Modal -->
+    <div id="healthModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-heart-circle-plus" style="color: var(--teal);"></i> Add Health Entry</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('healthModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form id="health-entry-form" onsubmit="handleHealthEntry(event)">
+                <div class="form-group">
+                    <label>Stress Level (0-100)</label>
+                    <input type="number" name="stress_level" min="0" max="100" placeholder="e.g. 45" required>
+                </div>
+                <div class="form-group">
+                    <label>Productivity Score (0-100)</label>
+                    <input type="number" name="productivity_score" min="0" max="100" placeholder="e.g. 80" required>
+                </div>
+                <div class="form-group">
+                    <label>Sleep Hours</label>
+                    <input type="number" step="0.5" name="sleep_hours" min="0" max="24" placeholder="e.g. 7.5" required>
+                </div>
+                <div class="form-group">
+                    <label>Steps Count</label>
+                    <input type="number" name="steps" min="0" placeholder="e.g. 8000" required>
+                </div>
+                <div class="form-group">
+                    <label>Screen Time (Hours)</label>
+                    <input type="number" step="0.1" name="screen_time_hours" min="0" max="24" placeholder="e.g. 5.5" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    <i class="fa fa-check"></i> SAVE DATA
+                </button>
+            </form>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('healthModal', false)">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- Bed Request Modal -->
+    <div id="bedModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-bed" style="color: var(--teal);"></i> Request Bed</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('bedModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong id="bed-hospital-name"></strong></p>
+            <form id="bed-request-form" onsubmit="submitBedRequest(event)">
+                <input type="hidden" name="hospital_id" id="bed-hospital-id">
+                <div class="form-group">
+                    <label>Patient Name</label>
+                    <input type="text" name="patient_name" placeholder="Full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Bed Type</label>
+                    <select name="bed_type" required>
+                        <option value="general">General Bed</option>
+                        <option value="icu">ICU Bed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    <i class="fa fa-check-circle"></i> CONFIRM BOOKING
+                </button>
+            </form>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('bedModal', false)">CANCEL</button>
+        </div>
+    </div>
+
+    <!-- Emergency Result Modal -->
+    <div id="emergencyResultModal" class="modal-overlay">
+        <div class="modal-content" style="text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <div class="stat-icon teal" style="width: 70px; height: 70px; font-size: 2rem; margin: 0 auto 16px auto;">
+                    <i class="fa fa-check-circle"></i>
+                </div>
+                <h2>Hospital Assigned!</h2>
+            </div>
+            <div id="emergency-result-content" style="text-align: left;"></div>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="toggleModal('emergencyResultModal', false)">
+                <i class="fa fa-check"></i> OK
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

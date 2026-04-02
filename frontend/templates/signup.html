@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create your HealMaps account to access smart healthcare services.">
+    <title>HealMaps | Create Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <div class="split-screen">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="particles" id="particles"></div>
+            <div class="left-panel-content">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="HealMaps Logo" style="width: 100px; margin-bottom: 24px; filter: drop-shadow(0 4px 20px rgba(0,0,0,0.2));">
+                <h1>HealMaps</h1>
+                <p>Join the Smart Emergency Healthcare Network today</p>
+                <div style="margin-top: 48px;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <i class="fa fa-check-circle" style="color: rgba(255,255,255,0.8); font-size: 1.1rem;"></i>
+                        <span style="font-size: 0.95rem; opacity: 0.85;">Real-time hospital bed tracking</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+                        <i class="fa fa-check-circle" style="color: rgba(255,255,255,0.8); font-size: 1.1rem;"></i>
+                        <span style="font-size: 0.95rem; opacity: 0.85;">AI-powered emergency routing</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa fa-check-circle" style="color: rgba(255,255,255,0.8); font-size: 1.1rem;"></i>
+                        <span style="font-size: 0.95rem; opacity: 0.85;">Personalized health analytics</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="form-container glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h2>Create Account</h2>
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+                        <i class="fa fa-moon"></i>
+                    </button>
+                </div>
+                <p class="form-subtitle">Enter your details to join HealMaps</p>
+
+                <form id="signup-form" onsubmit="handleSignup(event)">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" placeholder="John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="name@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required minlength="6">
+                        <i class="fa fa-eye password-toggle" onclick="togglePassword('password', this)"></i>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••" required>
+                        <i class="fa fa-eye password-toggle" onclick="togglePassword('confirm_password', this)"></i>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="signup-btn">
+                        <i class="fa fa-user-plus"></i> CREATE ACCOUNT
+                    </button>
+                </form>
+
+                <div style="margin-top: 28px; text-align: center; font-size: 0.9rem;">
+                    Already have an account?
+                    <a href="/" style="color: var(--teal); font-weight: 600;">Sign In</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

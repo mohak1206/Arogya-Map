@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Find hospitals near you with real-time bed availability, ICU status, and ventilator tracking.">
+    <title>HealMaps | Find Hospitals Near You</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="/dashboard" class="nav-logo">
+                <i class="fa fa-heart-pulse"></i>
+                <span>HealMaps</span>
+            </a>
+            <div class="nav-links" id="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/hospitals" class="active">Find Hospital</a>
+                <a href="/about">About</a>
+                <a href="/contact">Contact</a>
+            </div>
+            <div class="nav-right">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+                    <i class="fa fa-moon"></i>
+                </button>
+                <div class="user-badge" id="user-badge">
+                    <div class="user-avatar" id="user-avatar">U</div>
+                    <span id="user-name">User</span>
+                </div>
+                <button class="btn btn-sm btn-outline" onclick="handleLogout()" id="logout-btn">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+                <div class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero" style="padding: 120px 0 80px 0;">
+        <div class="particles" id="particles"></div>
+        <div class="hero-content container">
+            <h1><i class="fa fa-hospital" style="font-size: 2.5rem;"></i> Hospital Finder</h1>
+            <p>Locate nearby hospitals with real-time bed availability, ICU capacity, and ventilator tracking — powered by Haversine distance algorithm.</p>
+            <div class="hero-actions">
+                <button class="btn btn-primary" onclick="useMyLocation()" id="location-btn">
+                    <i class="fa fa-location-crosshairs"></i> Detect My Location
+                </button>
+                <button class="btn btn-emergency" onclick="window.location.href='/dashboard#emergency'">
+                    <i class="fa fa-phone-volume"></i> EMERGENCY SOS
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container" style="margin-top: 40px;">
+
+        <!-- Location Info -->
+        <div class="glass-card reveal" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div class="flex" style="gap: 12px;">
+                <div class="stat-icon teal"><i class="fa fa-map-marker-alt"></i></div>
+                <div>
+                    <h4 id="location-status">Location not detected</h4>
+                    <p style="font-size: 0.85rem;" id="location-coords">Click "Detect My Location" to find hospitals near you</p>
+                </div>
+            </div>
+            <div class="flex" style="gap: 8px;">
+                <span class="badge badge-available" id="hospitals-count">0 Hospitals Found</span>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-bar reveal">
+            <input type="text" id="hospital-search" placeholder="Search by hospital name, city, or speciality..." oninput="debounceSearch(this.value)">
+            <button class="btn btn-primary" onclick="searchHospitals()" id="search-btn">
+                <i class="fa fa-search"></i> Search
+            </button>
+        </div>
+
+        <!-- Map -->
+        <div class="glass-card reveal" style="padding: 0; overflow: hidden; margin-bottom: 32px;">
+            <div id="hospital-map" class="map-container" style="height: 400px;"></div>
+        </div>
+
+        <!-- Hospital Grid -->
+        <div style="margin-bottom: 24px;">
+            <h2 class="section-title reveal">Available Hospitals</h2>
+            <p class="section-subtitle reveal">Sorted by distance from your location</p>
+        </div>
+        <div id="hospital-list" class="hospital-grid">
+            <!-- Skeleton Loaders -->
+            <div class="glass-card skeleton skeleton-card"></div>
+            <div class="glass-card skeleton skeleton-card"></div>
+            <div class="glass-card skeleton skeleton-card"></div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> HealMaps</h3>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics.</p>
+                    <div class="social-links" style="margin-top: 20px;">
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div>
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="/hospitals">Find Hospital</a></li>
+                        <li><a href="/dashboard">Dashboard</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Emergency FAQ</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2024 HealMaps — All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bed Request Modal -->
+    <div id="bedModal" class="modal-overlay">
+        <div class="modal-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-bed" style="color: var(--teal);"></i> Request Bed</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('bedModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong id="bed-hospital-name"></strong></p>
+            <form id="bed-request-form" onsubmit="submitBedRequest(event)">
+                <input type="hidden" name="hospital_id" id="bed-hospital-id">
+                <div class="form-group">
+                    <label>Patient Name</label>
+                    <input type="text" name="patient_name" placeholder="Full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Bed Type</label>
+                    <select name="bed_type" required>
+                        <option value="general">General Bed</option>
+                        <option value="icu">ICU Bed</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    <i class="fa fa-check-circle"></i> CONFIRM BOOKING
+                </button>
+            </form>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('bedModal', false)">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Initialize map on this page
+        document.addEventListener('DOMContentLoaded', () => {
+            initHospitalMap();
+        });
+    </script>
+</body>
+</html>
