@@ -124,7 +124,13 @@ async function handleLogin(e) {
   try {
     const data = await apiFetch('/login', { method: 'POST', body: JSON.stringify(body) });
     showToast('Login successful! Redirecting...');
-    setTimeout(() => window.location.href = '/dashboard', 1000);
+    setTimeout(() => {
+      if (data.user && data.user.role === 'admin') {
+        window.location.href = '/admin/dashboard';
+      } else {
+        window.location.href = '/dashboard';
+      }
+    }, 1000);
   } catch (err) {
     if (btn) btn.disabled = false;
   }

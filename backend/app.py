@@ -32,10 +32,9 @@ app = Flask(
 )
 app.config.from_object(Config)
 CORS(app, supports_credentials=True)
-mysql = MySQL(app)
+from database import mysql
+mysql.init_app(app)
 
-from admin_routes import admin_bp
-app.register_blueprint(admin_bp, url_prefix='/admin')
 
 
 # ── Helper: Haversine Distance Formula ──────────────────────────────────────
@@ -625,6 +624,10 @@ def contact_submit():
 # ════════════════════════════════════════════════════════════════════════════
 # Run Application
 # ════════════════════════════════════════════════════════════════════════════
+
+from admin_routes import admin_bp, admin_api_bp
+app.register_blueprint(admin_bp, url_prefix='/admin')
+app.register_blueprint(admin_api_bp, url_prefix='/api/admin')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

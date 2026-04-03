@@ -4,6 +4,7 @@ from datetime import datetime
 import datetime as dt
 
 admin_bp = Blueprint('admin', __name__)
+admin_api_bp = Blueprint('admin_api', __name__)
 
 def admin_required(f):
     """Decorator to require admin role for page views."""
@@ -61,9 +62,9 @@ def admin_reports():
 # ==============================================================================
 # Note: we will need `mysql` instance. We can import it from `app` or pass it in.
 # To avoid circular imports, we'll import `mysql` inside the functions, or at the top.
-from app import mysql
+from database import mysql
 
-@admin_bp.route('/api/admin/dashboard-stats', methods=['GET'])
+@admin_api_bp.route('/dashboard-stats', methods=['GET'])
 @admin_api_required
 def dashboard_stats():
     try:
@@ -114,7 +115,7 @@ def dashboard_stats():
         return jsonify({'error': str(e)}), 500
 
 
-@admin_bp.route('/api/admin/hospitals', methods=['GET'])
+@admin_api_bp.route('/hospitals', methods=['GET'])
 @admin_api_required
 def get_hospitals():
     try:
@@ -129,7 +130,7 @@ def get_hospitals():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/hospitals', methods=['POST'])
+@admin_api_bp.route('/hospitals', methods=['POST'])
 @admin_api_required
 def add_hospital():
     data = request.json
@@ -153,7 +154,7 @@ def add_hospital():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/hospitals/<int:h_id>', methods=['PUT'])
+@admin_api_bp.route('/hospitals/<int:h_id>', methods=['PUT'])
 @admin_api_required
 def edit_hospital(h_id):
     data = request.json
@@ -177,7 +178,7 @@ def edit_hospital(h_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/hospitals/<int:h_id>/status', methods=['PATCH'])
+@admin_api_bp.route('/hospitals/<int:h_id>/status', methods=['PATCH'])
 @admin_api_required
 def toggle_hospital_status(h_id):
     data = request.json
@@ -191,7 +192,7 @@ def toggle_hospital_status(h_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/hospitals/<int:h_id>', methods=['DELETE'])
+@admin_api_bp.route('/hospitals/<int:h_id>', methods=['DELETE'])
 @admin_api_required
 def delete_hospital(h_id):
     try:
@@ -204,7 +205,7 @@ def delete_hospital(h_id):
         return jsonify({'error': str(e)}), 500
 
 
-@admin_bp.route('/api/admin/patients', methods=['GET'])
+@admin_api_bp.route('/patients', methods=['GET'])
 @admin_api_required
 def get_patients():
     try:
@@ -224,7 +225,7 @@ def get_patients():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/patients/<int:p_id>/assign', methods=['PATCH'])
+@admin_api_bp.route('/patients/<int:p_id>/assign', methods=['PATCH'])
 @admin_api_required
 def assign_patient_hospital(p_id):
     hospital_id = request.json.get('hospital_id')
@@ -237,7 +238,7 @@ def assign_patient_hospital(p_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/patients/<int:p_id>/status', methods=['PATCH'])
+@admin_api_bp.route('/patients/<int:p_id>/status', methods=['PATCH'])
 @admin_api_required
 def update_patient_status(p_id):
     status = request.json.get('status')
@@ -251,7 +252,7 @@ def update_patient_status(p_id):
         return jsonify({'error': str(e)}), 500
 
 
-@admin_bp.route('/api/admin/users', methods=['GET'])
+@admin_api_bp.route('/users', methods=['GET'])
 @admin_api_required
 def get_users():
     try:
@@ -272,7 +273,7 @@ def get_users():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/users/<int:u_id>/status', methods=['PATCH'])
+@admin_api_bp.route('/users/<int:u_id>/status', methods=['PATCH'])
 @admin_api_required
 def toggle_user_status(u_id):
     is_active = request.json.get('is_active')
@@ -285,7 +286,7 @@ def toggle_user_status(u_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/users/<int:u_id>/role', methods=['PATCH'])
+@admin_api_bp.route('/users/<int:u_id>/role', methods=['PATCH'])
 @admin_api_required
 def toggle_user_role(u_id):
     role = request.json.get('role')
@@ -298,7 +299,7 @@ def toggle_user_role(u_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/users/<int:u_id>/health', methods=['GET'])
+@admin_api_bp.route('/users/<int:u_id>/health', methods=['GET'])
 @admin_api_required
 def get_user_health(u_id):
     try:
@@ -327,7 +328,7 @@ def get_user_health(u_id):
         return jsonify({'error': str(e)}), 500
 
 
-@admin_bp.route('/api/admin/reports/overview', methods=['GET'])
+@admin_api_bp.route('/reports/overview', methods=['GET'])
 @admin_api_required
 def reports_overview():
     try:
@@ -366,7 +367,7 @@ def reports_overview():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/reports/requests', methods=['GET'])
+@admin_api_bp.route('/reports/requests', methods=['GET'])
 @admin_api_required
 def reports_requests():
     try:
@@ -386,7 +387,7 @@ def reports_requests():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/reports/priority', methods=['GET'])
+@admin_api_bp.route('/reports/priority', methods=['GET'])
 @admin_api_required
 def reports_priority():
     try:
@@ -398,7 +399,7 @@ def reports_priority():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/reports/hospitals', methods=['GET'])
+@admin_api_bp.route('/reports/hospitals', methods=['GET'])
 @admin_api_required
 def reports_hospitals():
     try:
@@ -415,7 +416,7 @@ def reports_hospitals():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/admin/reports/beds', methods=['GET'])
+@admin_api_bp.route('/reports/beds', methods=['GET'])
 @admin_api_required
 def reports_beds():
     try:
