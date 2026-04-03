@@ -1,5 +1,5 @@
 /**
- * HealMaps — Unified Frontend Logic
+ * Arogya Map — Unified Frontend Logic
  * Handles: Theme Toggle, API calls, Geolocation, Charts, Map, all UI interactions
  */
 
@@ -12,12 +12,12 @@ let searchTimeout = null;
 // THEME MANAGEMENT
 // ═══════════════════════════════════════════════════════════
 function getTheme() {
-  return localStorage.getItem('healmaps-theme') || 'light';
+  return localStorage.getItem('arogyamap-theme') || 'light';
 }
 
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('healmaps-theme', theme);
+  localStorage.setItem('arogyamap-theme', theme);
   updateThemeIcon(theme);
 }
 

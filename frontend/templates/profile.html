@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Your HealMaps Profile — manage your account, view health history, and track emergency bookings.">
-    <title>HealMaps | My Profile</title>
+    <meta name="description" content="Your Arogya Map Profile — manage your account, view health history, and track emergency bookings.">
+    <title>Arogya Map | My Profile</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
@@ -16,7 +16,7 @@
         <div class="sidebar-header">
             <a href="/dashboard" class="sidebar-logo">
                 <i class="fa fa-heart-pulse"></i>
-                <span>HealMaps</span>
+                <span>Arogya Map</span>
             </a>
             <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
         </div>
@@ -24,7 +24,7 @@
             <div class="sidebar-nav-label">Main</div>
             <a href="/dashboard"><i class="fa fa-grid-2"></i> Dashboard</a>
             <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
-            <a href="/dashboard#emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+            <a href="/emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
             <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
@@ -59,7 +59,7 @@
             </button>
             <a href="/dashboard" class="nav-logo">
                 <i class="fa fa-heart-pulse"></i>
-                <span>HealMaps</span>
+                <span>Arogya Map</span>
             </a>
             <div style="width: 40px;"></div>
         </div>
@@ -200,14 +200,14 @@
                     <a href="/hospitals" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
                         <i class="fa fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest Hospital
                     </a>
-                    <a href="/dashboard#emergency" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                    <a href="/emergency" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
                         <i class="fa fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS Request
                     </a>
                     <a href="/dashboard" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;" onclick="toggleModal('healthModal', true); return false;">
                         <i class="fa fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health Entry
                     </a>
                     <a href="/about" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-circle-info" style="color: var(--purple); width: 20px;"></i> About HealMaps
+                        <i class="fa fa-circle-info" style="color: var(--purple); width: 20px;"></i> About Arogya Map
                     </a>
                     <a href="/contact" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
                         <i class="fa fa-envelope" style="color: var(--amber); width: 20px;"></i> Contact Support
@@ -222,7 +222,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                &copy; 2024 HealMaps — All Rights Reserved.
+                &copy; 2024 Arogya Map — All Rights Reserved.
             </div>
         </div>
     </footer>

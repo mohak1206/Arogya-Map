@@ -1,6 +1,6 @@
-# HealMaps — Smart Emergency & Hospital Resource Management
+# Arogya Map — Smart Emergency & Hospital Resource Management
 
-HealMaps is a full-stack healthcare dashboard designed to optimize emergency responses and hospital resource management. It uses real-time data, Haversine-based hospital finding, priority queues for emergency routing, and interactive maps to deliver a premium healthcare experience.
+Arogya Map is a full-stack healthcare dashboard designed to optimize emergency responses and hospital resource management. It uses real-time data, Haversine-based hospital finding, priority queues for emergency routing, and interactive maps to deliver a premium healthcare experience.
 
 ## 🚀 Key Features
 
@@ -29,7 +29,7 @@ HealMaps is a full-stack healthcare dashboard designed to optimize emergency res
 ### 2. Database Configuration
 ```bash
 # Create database and seed data
-mysql -u root -p < backend/database/healmaps.sql
+mysql -u root -p < backend/database/arogyamap.sql
 ```
 - Update `backend/config.py` with your MySQL `root` password.
 
@@ -59,7 +59,7 @@ HEAL MAPS/
 │   ├── config.py                   # MySQL configuration
 │   ├── requirements.txt            # Python dependencies
 │   └── database/
-│       └── healmaps.sql            # Schema + seed data
+│       └── arogyamap.sql            # Schema + seed data
 └── frontend/
     ├── static/
     │   ├── css/style.css           # Premium design system (light/dark theme)

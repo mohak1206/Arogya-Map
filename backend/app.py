@@ -1,5 +1,5 @@
 """
-HealMaps — Flask Backend Application
+Arogya Map — Flask Backend Application
 Smart Emergency & Hospital Resource Management System
 
 Algorithms implemented:
@@ -98,6 +98,9 @@ def contact():
 def profile():
     return render_template('profile.html')
 
+@app.route('/emergency')
+def emergency():
+    return render_template('emergency.html')
 
 # ════════════════════════════════════════════════════════════════════════════
 # AUTH API ROUTES
