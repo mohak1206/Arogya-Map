@@ -345,10 +345,14 @@ function renderCharts(rows) {
     new Chart(ctxScreen, {
       type: 'doughnut',
       data: {
-        labels: ['Screen Time', 'Free Time'],
+        labels: ['Sleep Time', 'Screen Time', 'Free Time'],
         datasets: [{
-          data: [latest.screen_time_hours, Math.max(0, 16 - latest.screen_time_hours)],
-          backgroundColor: ['#f43f5e', '#00d4aa'],
+          data: [
+            latest.sleep_hours, 
+            latest.screen_time_hours, 
+            Math.max(0, 24 - latest.sleep_hours - latest.screen_time_hours)
+          ],
+          backgroundColor: ['#8b5cf6', '#f43f5e', '#00d4aa'],
           borderWidth: 0
         }]
       },

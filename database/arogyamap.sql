@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,                 -- Werkzeug hashed password
+    role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,7 +70,8 @@ CREATE TABLE IF NOT EXISTS health_data (
     sleep_hours DECIMAL(4,2) DEFAULT 0.00,
     steps INT DEFAULT 0,
     screen_time_hours DECIMAL(4,2) DEFAULT 0.00,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_user_date (user_id, date)
 );
 
 -- ============================================================

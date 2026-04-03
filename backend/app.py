@@ -113,9 +113,13 @@ def register():
     name     = data.get('name', '').strip()
     email    = data.get('email', '').strip().lower()
     password = data.get('password', '')
+    role     = data.get('role', 'user').strip().lower()
 
     if not name or not email or not password:
         return jsonify({'error': 'All fields are required'}), 400
+
+    if role not in ('user', 'admin'):
+        role = 'user'
 
     hashed_pw = generate_password_hash(password)
 
@@ -126,8 +130,8 @@ def register():
             return jsonify({'error': 'Email already registered'}), 409
 
         cur.execute(
-            'INSERT INTO users (name, email, password) VALUES (%s, %s, %s)',
-            (name, email, hashed_pw)
+            'INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)',
+            (name, email, hashed_pw, role)
         )
         mysql.connection.commit()
         cur.close()
@@ -158,10 +162,11 @@ def login():
         session['user_id']    = user['id']
         session['user_name']  = user['name']
         session['user_email'] = user['email']
+        session['user_role']  = user['role']
 
         return jsonify({
             'message': 'Login successful',
-            'user': {'id': user['id'], 'name': user['name'], 'email': user['email']}
+            'user': {'id': user['id'], 'name': user['name'], 'email': user['email'], 'role': user['role']}
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -181,7 +186,8 @@ def get_user():
     return jsonify({
         'id':    session.get('user_id'),
         'name':  session.get('user_name'),
-        'email': session.get('user_email')
+        'email': session.get('user_email'),
+        'role':  session.get('user_role', 'user')
     }), 200
 
 
@@ -220,7 +226,8 @@ def get_user_profile():
             'user': {
                 'id': session.get('user_id'),
                 'name': session.get('user_name'),
-                'email': session.get('user_email')
+                'email': session.get('user_email'),
+                'role': session.get('user_role', 'user')
             },
             'latest_health': latest_health,
             'emergency_requests': emergency_count['total'] if emergency_count else 0,
@@ -560,7 +567,13 @@ def add_health():
         cur.execute(
             '''INSERT INTO health_data
                (user_id, date, stress_level, productivity_score, sleep_hours, steps, screen_time_hours)
-               VALUES (%s, %s, %s, %s, %s, %s, %s)''',
+               VALUES (%s, %s, %s, %s, %s, %s, %s)
+               ON DUPLICATE KEY UPDATE
+               stress_level = VALUES(stress_level),
+               productivity_score = VALUES(productivity_score),
+               sleep_hours = VALUES(sleep_hours),
+               steps = VALUES(steps),
+               screen_time_hours = VALUES(screen_time_hours)''',
             (
                 session['user_id'],
                 data.get('date', datetime.today().strftime('%Y-%m-%d')),
@@ -573,7 +586,7 @@ def add_health():
         )
         mysql.connection.commit()
         cur.close()
-        return jsonify({'message': 'Health entry added successfully'}), 201
+        return jsonify({'message': 'Health entry saved successfully'}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

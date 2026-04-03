@@ -67,6 +67,14 @@
                         <i class="fa fa-eye password-toggle" onclick="togglePassword('confirm_password', this)"></i>
                     </div>
 
+                    <div class="form-group">
+                        <label for="role">Account Type</label>
+                        <select id="role" name="role" required style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); margin-top: 6px; box-sizing: border-box;">
+                            <option value="user" style="background: var(--bg-primary);">Standard User</option>
+                            <option value="admin" style="background: var(--bg-primary);">Hospital Admin</option>
+                        </select>
+                    </div>
+
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;" id="signup-btn">
                         <i class="fa fa-user-plus"></i> CREATE ACCOUNT
                     </button>
