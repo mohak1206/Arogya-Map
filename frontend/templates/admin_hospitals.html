@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Arogya Map Admin Panel — Manage hospitals.">
+    <title>Admin | Hospitals</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .admin-badge {
+            background-color: var(--teal); color: white; font-size: 0.6rem;
+            padding: 2px 6px; border-radius: 12px; margin-left: 8px; vertical-align: middle; text-transform: uppercase;
+        }
+        .admin-table {
+            width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; font-size: 0.9rem;
+        }
+        .admin-table th, .admin-table td {
+            padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .admin-table th { color: var(--text-muted); font-weight: 500; }
+        .admin-actions button {
+            margin-right: 4px; padding: 4px 8px; font-size: 0.8rem;
+        }
+        .top-controls {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .search-box {
+            display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 300px;
+        }
+        .search-box input {
+            background: transparent; border: none; color: white; outline: none; margin-left: 8px; width: 100%; font-family: inherit;
+        }
+    </style>
+</head>
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/dashboard" class="sidebar-logo">
+                <i class="fa fa-shield-halved"></i>
+                <span>Arogya Map <span class="admin-badge">Admin</span></span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Command Center</div>
+            <a href="/admin/dashboard"><i class="fa fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals" class="active"><i class="fa fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
+            <a href="/admin/reports"><i class="fa fa-file-invoice"></i> Reports</a>
+            <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
+            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar" id="user-avatar">A</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">Admin</div>
+                    <div class="user-email-sidebar" id="user-email">admin@system.com</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <main class="container" style="margin-top: 80px; margin-bottom: 40px;">
+        <h2 class="section-title reveal">Hospital Network Management</h2>
+        
+        <div class="top-controls reveal">
+            <div class="search-box">
+                <i class="fa fa-search teal"></i>
+                <input type="text" id="hospital-search" placeholder="Search hospitals..." onkeyup="filterHospitals()">
+            </div>
+            <button class="btn btn-primary" onclick="openHospitalModal()">
+                <i class="fa fa-plus"></i> Add New Hospital
+            </button>
+        </div>
+
+        <div class="glass-card reveal" style="overflow-x: auto;">
+            <table class="admin-table" id="hospitals-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Beds (Total/Avail)</th>
+                        <th>ICU (Total/Avail)</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="hospitals-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Add/Edit Hospital Modal -->
+    <div id="hospitalModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 id="hospital-modal-title"><i class="fa fa-hospital" style="color: var(--teal);"></i> Add Hospital</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('hospitalModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form id="hospital-form" onsubmit="submitHospitalForm(event)">
+                <input type="hidden" id="h_id">
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>Hospital Name</label>
+                        <input type="text" id="h_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number</label>
+                        <input type="text" id="h_contact">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Location / Address</label>
+                    <input type="text" id="h_location" required>
+                </div>
+                <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div class="form-group">
+                        <label>Latitude</label>
+                        <input type="number" step="any" id="h_lat" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Longitude</label>
+                        <input type="number" step="any" id="h_lng" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Total Beds</label>
+                        <input type="number" id="h_tb" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Available Beds</label>
+                        <input type="number" id="h_ab" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Total ICU Beds</label>
+                        <input type="number" id="h_ticu" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Available ICU Beds</label>
+                        <input type="number" id="h_aicu" required>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Active Status</label>
+                        <select id="h_active">
+                            <option value="true">Active Database Entry</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
+                    <i class="fa fa-save"></i> Save Hospital
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Bed Update Modal -->
+    <div id="bedUpdateModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-bed" style="color: var(--blue);"></i> Update Beds</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('bedUpdateModal', false)">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <p id="bed-update-hospital-name" style="margin-bottom: 12px; color: var(--text-secondary);"></p>
+            <form id="bed-update-form" onsubmit="submitBedUpdate(event)">
+                <input type="hidden" id="b_h_id">
+                <div class="form-group">
+                    <label>Available General Beds</label>
+                    <input type="number" id="b_gen_avail" required>
+                </div>
+                <div class="form-group">
+                    <label>Available ICU Beds</label>
+                    <input type="number" id="b_icu_avail" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">
+                    <i class="fa fa-sync"></i> Refresh Inventory
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAdminHospitals();
+        });
+    </script>
+</body>
+</html>

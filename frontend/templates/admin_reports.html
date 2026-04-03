@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Reports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-badge { background-color: var(--teal); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 12px; margin-left: 8px; vertical-align: middle; text-transform: uppercase; }
+        .chart-container-large { width: 100%; height: 300px; display: flex; align-items: center; justify-content: center; }
+        .chart-wrapper { padding: 20px; box-sizing: border-box; }
+    </style>
+</head>
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/dashboard" class="sidebar-logo">
+                <i class="fa fa-shield-halved"></i>
+                <span>Arogya Map <span class="admin-badge">Admin</span></span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Command Center</div>
+            <a href="/admin/dashboard"><i class="fa fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals"><i class="fa fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
+            <a href="/admin/reports" class="active"><i class="fa fa-file-invoice"></i> Reports</a>
+            <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
+            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar">A</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">Admin</div>
+                    <div class="user-email-sidebar" id="user-email">admin@system.com</div>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);"><i class="fa fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
+            <a href="/admin/dashboard" class="nav-logo"><i class="fa fa-shield-halved"></i><span>Admin Panel</span></a>
+            <div style="width: 40px;"></div>
+        </div>
+    </nav>
+
+    <main class="container" style="margin-top: 80px; margin-bottom: 40px;">
+        <h2 class="section-title reveal">Analytics & Reports</h2>
+        
+        <!-- Overview Cards -->
+        <section class="stats-grid reveal" id="reports-stats-grid" style="margin-top: 24px;">
+            <div class="glass-card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon purple"><i class="fa fa-calendar-week"></i></div>
+                </div>
+                <div class="stat-label">Emergencies This Week</div>
+                <div class="stat-value" id="r-reqs-week">0</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon teal"><i class="fa fa-stopwatch"></i></div>
+                </div>
+                <div class="stat-label">Avg Response Time</div>
+                <div class="stat-value" id="r-avg-time">--</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon blue"><i class="fa fa-building-circle-check"></i></div>
+                </div>
+                <div class="stat-label">Most Used Hospital</div>
+                <div class="stat-value" id="r-most-used" style="font-size: 1.2rem;">--</div>
+            </div>
+            <div class="glass-card stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon amber"><i class="fa fa-fire"></i></div>
+                </div>
+                <div class="stat-label">Busiest Day</div>
+                <div class="stat-value" id="r-busiest-day" style="font-size: 1.2rem; text-transform: capitalize;">--</div>
+            </div>
+        </section>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+            <div class="glass-card chart-wrapper reveal">
+                <h3><i class="fa fa-chart-bar blue"></i> Emergency Requests (Last 7 Days)</h3>
+                <div class="chart-container-large">
+                    <canvas id="requestsChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card chart-wrapper reveal">
+                <h3><i class="fa fa-chart-pie purple"></i> Requests by Priority</h3>
+                <div class="chart-container-large">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card chart-wrapper reveal">
+                <h3><i class="fa fa-ranking-star amber"></i> Top 5 Most Used Hospitals</h3>
+                <div class="chart-container-large">
+                    <canvas id="hospitalsChart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card chart-wrapper reveal">
+                <h3><i class="fa fa-chart-line teal"></i> Bed Availability Trend (Snapshot)</h3>
+                <div class="chart-container-large">
+                    <canvas id="bedsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAdminReports();
+        });
+    </script>
+</body>
+</html>

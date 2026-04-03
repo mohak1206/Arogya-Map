@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin | Users</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-badge { background-color: var(--teal); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 12px; margin-left: 8px; vertical-align: middle; text-transform: uppercase; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; font-size: 0.9rem; }
+        .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .admin-table th { color: var(--text-muted); font-weight: 500; }
+        .top-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .search-box { display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); padding: 8px 16px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); width: 300px; }
+        .search-box input { background: transparent; border: none; color: white; outline: none; margin-left: 8px; width: 100%; font-family: inherit; }
+        
+        .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-transform: capitalize; }
+        .role-badge.admin { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; } 
+        .role-badge.user { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .status-badge.active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-badge.inactive { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .health-mini-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.8rem; }
+        .health-mini-table th, .health-mini-table td { padding: 4px; border-bottom: 1px solid #333; text-align: center; }
+    </style>
+</head>
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/dashboard" class="sidebar-logo">
+                <i class="fa fa-shield-halved"></i>
+                <span>Arogya Map <span class="admin-badge">Admin</span></span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Command Center</div>
+            <a href="/admin/dashboard"><i class="fa fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals"><i class="fa fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users" class="active"><i class="fa fa-users"></i> Users</a>
+            <a href="/admin/reports"><i class="fa fa-file-invoice"></i> Reports</a>
+            <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
+            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar">A</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">Admin</div>
+                    <div class="user-email-sidebar" id="user-email">admin@system.com</div>
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);"><i class="fa fa-right-from-bracket"></i> Logout</button>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
+            <a href="/admin/dashboard" class="nav-logo"><i class="fa fa-shield-halved"></i><span>Admin Panel</span></a>
+            <div style="width: 40px;"></div>
+        </div>
+    </nav>
+
+    <main class="container" style="margin-top: 80px; margin-bottom: 40px;">
+        <h2 class="section-title reveal">User Management System</h2>
+        
+        <div class="top-controls reveal">
+            <div class="search-box">
+                <i class="fa fa-search teal"></i>
+                <input type="text" id="user-search" placeholder="Search by name or email..." onkeyup="filterUsers()">
+            </div>
+            <div class="badge admin" style="font-size: 1rem; padding: 8px 16px;">
+                Total Users: <span id="total-users-badge">0</span>
+            </div>
+        </div>
+
+        <div class="glass-card reveal" style="overflow-x: auto;">
+            <table class="admin-table" id="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined Date</th>
+                        <th>Health Entries</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="users-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Health Data Modal -->
+    <div id="healthDataModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> User Health Data</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('healthDataModal', false)"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+                <div class="glass-card" style="padding: 12px; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--teal); font-weight: bold;" id="avg_stress">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Avg Stress Level</div>
+                </div>
+                <div class="glass-card" style="padding: 12px; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--purple); font-weight: bold;" id="avg_sleep">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Avg Sleep Hours</div>
+                </div>
+            </div>
+            
+            <h3 style="font-size: 1rem; margin-bottom: 8px;">Last 7 Entries</h3>
+            <table class="health-mini-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Stress</th>
+                        <th>Sleep</th>
+                        <th>Steps</th>
+                        <th>Productivity</th>
+                    </tr>
+                </thead>
+                <tbody id="health-history-body">
+                    <!-- Populated via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Role Confirm Modal -->
+    <div id="roleModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2><i class="fa fa-triangle-exclamation" style="color: var(--amber);"></i> Change User Role</h2>
+            <p style="margin: 16px 0;">Are you sure you want to change <span id="r_user_name" style="font-weight: bold;"></span>'s role to <span id="r_new_role" style="font-weight: bold; color: var(--teal);"></span>?</p>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button class="btn btn-outline" style="flex: 1;" onclick="toggleModal('roleModal', false)">Cancel</button>
+                <button class="btn btn-primary" style="flex: 1;" onclick="confirmRoleChange()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAdminUsers();
+        });
+    </script>
+</body>
+</html>

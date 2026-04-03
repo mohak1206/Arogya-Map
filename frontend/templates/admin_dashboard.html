@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Arogya Map Admin Panel — Manage hospitals, patients, and users.">
+    <title>Arogya Map Admin | Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-badge {
+            background-color: var(--teal);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-left: 8px;
+            vertical-align: middle;
+            text-transform: uppercase;
+        }
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            text-align: left;
+        }
+        .admin-table th, .admin-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .admin-table th {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge.critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .badge.high { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+        .badge.medium { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+        .badge.low { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+
+        .badge.assigned { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+        .badge.pending { background: rgba(234, 179, 8, 0.2); color: #eab308; }
+
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px;
+        }
+        .status-dot.green { background: #22c55e; }
+        .status-dot.orange { background: #f97316; }
+        .status-dot.red { background: #ef4444; }
+    </style>
+</head>
+
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <!-- Admin Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/admin/dashboard" class="sidebar-logo">
+                <i class="fa fa-shield-halved"></i>
+                <span>Arogya Map <span class="admin-badge">Admin</span></span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Command Center</div>
+            <a href="/admin/dashboard" class="active"><i class="fa fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals"><i class="fa fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
+            <a href="/admin/reports"><i class="fa fa-file-invoice"></i> Reports</a>
+
+            <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
+            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar" id="user-avatar">A</div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="user-name">Admin</div>
+                    <div class="user-email-sidebar" id="user-email">admin@system.com</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fas fa-sun"></i> Theme
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                    <i class="fa fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Mobile Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
+                <i class="fa fa-bars"></i>
+            </button>
+            <a href="/admin/dashboard" class="nav-logo">
+                <i class="fa fa-shield-halved"></i>
+                <span>Admin Panel</span>
+            </a>
+            <div style="width: 40px;"></div>
+        </div>
+    </nav>
+
+    <main class="container" style="margin-top: 80px; margin-bottom: 40px;">
+        <h2 class="section-title reveal">System Overview</h2>
+        <p class="section-subtitle reveal" style="margin-bottom: 24px;">Real-time command center metrics</p>
+
+        <!-- Stats Row -->
+        <section class="stats-grid" id="admin-stats-grid">
+            <div class="glass-card stat-card reveal">
+                <div class="stat-header">
+                    <div class="stat-icon teal"><i class="fa fa-hospital"></i></div>
+                </div>
+                <div class="stat-label">Total Hospitals</div>
+                <div class="stat-value" id="stat-hospitals">0</div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-1">
+                <div class="stat-header">
+                    <div class="stat-icon blue"><i class="fa fa-bed"></i></div>
+                </div>
+                <div class="stat-label">Available Beds (Network)</div>
+                <div class="stat-value" id="stat-beds">0</div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-2">
+                <div class="stat-header">
+                    <div class="stat-icon amber"><i class="fa fa-truck-medical"></i></div>
+                </div>
+                <div class="stat-label">Emergencies Today</div>
+                <div class="stat-value" id="stat-requests">0</div>
+            </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-3">
+                <div class="stat-header">
+                    <div class="stat-icon purple"><i class="fa fa-users"></i></div>
+                </div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="stat-users">0</div>
+            </div>
+        </section>
+
+        <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+            <!-- Hospital Capacity Overview -->
+            <div class="glass-card reveal">
+                <h3><i class="fa fa-building-user teal"></i> Hospital Capacity</h3>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Status</th>
+                                <th>Hospital Name</th>
+                                <th>Available Beds</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hospital-capacity-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Emergency Requests -->
+            <div class="glass-card reveal">
+                <h3><i class="fa fa-bell amber"></i> Active Dispatch Board</h3>
+                <div style="overflow-x: auto; margin-top: 16px;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Assigned To</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-requests-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAdminDashboardStats();
+        });
+    </script>
+</body>
+</html>

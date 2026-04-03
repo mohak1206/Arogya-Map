@@ -34,6 +34,9 @@ app.config.from_object(Config)
 CORS(app, supports_credentials=True)
 mysql = MySQL(app)
 
+from admin_routes import admin_bp
+app.register_blueprint(admin_bp, url_prefix='/admin')
+
 
 # ── Helper: Haversine Distance Formula ──────────────────────────────────────
 def haversine(lat1, lon1, lat2, lon2):
