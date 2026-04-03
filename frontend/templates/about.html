@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Learn about Arogya Map — our mission to revolutionize emergency healthcare with AI-powered hospital management.">
+    <meta name="description"
+        content="Learn about Arogya Map — our mission to revolutionize emergency healthcare with AI-powered hospital management.">
     <title>Arogya Map | About Us</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -40,10 +43,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -70,7 +75,8 @@
         <div class="particles" id="particles"></div>
         <div class="hero-content container">
             <h1>Our Mission</h1>
-            <p>Bridging the gap between emergency medical needs and real-time hospital resource availability using cutting-edge algorithms.</p>
+            <p>Bridging the gap between emergency medical needs and real-time hospital resource availability using
+                cutting-edge algorithms.</p>
         </div>
     </header>
 
@@ -83,7 +89,9 @@
                     <i class="fa fa-map-location-dot"></i>
                 </div>
                 <h3>Smart Hospital Finding</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);">Using the <strong>Haversine formula</strong> to calculate the mathematically shortest path to the closest hospital from your current GPS coordinates.</p>
+                <p style="margin-top: 14px; color: var(--text-secondary);">Using the <strong>Haversine formula</strong>
+                    to calculate the mathematically shortest path to the closest hospital from your current GPS
+                    coordinates.</p>
             </div>
 
             <div class="glass-card feature-card reveal reveal-delay-1">
@@ -91,7 +99,9 @@
                     <i class="fa fa-truck-medical"></i>
                 </div>
                 <h3>Emergency Routing</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);"><strong>Priority Queue</strong> based scheduling ensures critical patients are assigned to hospitals with the most available resources first.</p>
+                <p style="margin-top: 14px; color: var(--text-secondary);"><strong>Priority Queue</strong> based
+                    scheduling ensures critical patients are assigned to hospitals with the most available resources
+                    first.</p>
             </div>
 
             <div class="glass-card feature-card reveal reveal-delay-2">
@@ -99,7 +109,9 @@
                     <i class="fa fa-shield-heart"></i>
                 </div>
                 <h3>AI Wellness Analytics</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);">Personalized health tracking with <strong>Chart.js</strong> visualizations and AI-driven insights to prevent emergencies before they happen.</p>
+                <p style="margin-top: 14px; color: var(--text-secondary);">Personalized health tracking with
+                    <strong>Chart.js</strong> visualizations and AI-driven insights to prevent emergencies before they
+                    happen.</p>
             </div>
         </section>
 
@@ -111,32 +123,40 @@
             </div>
             <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
                 <div class="glass-card reveal" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon teal" style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
+                    <div class="stat-icon teal"
+                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
                         <i class="fa fa-route"></i>
                     </div>
                     <h4>Haversine Distance</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Great-circle distance between two GPS coordinates for shortest path calculations.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Great-circle distance
+                        between two GPS coordinates for shortest path calculations.</p>
                 </div>
                 <div class="glass-card reveal reveal-delay-1" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon rose" style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
+                    <div class="stat-icon rose"
+                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
                         <i class="fa fa-list-ol"></i>
                     </div>
                     <h4>Priority Queue</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Sorting patients by severity: Critical > High > Medium > Low for optimal assignment.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Sorting patients by
+                        severity: Critical > High > Medium > Low for optimal assignment.</p>
                 </div>
                 <div class="glass-card reveal reveal-delay-2" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon amber" style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
+                    <div class="stat-icon amber"
+                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
                         <i class="fa fa-hand-holding-medical"></i>
                     </div>
                     <h4>Greedy Allocation</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Assigning hospitals with the maximum available resources weighted by proximity.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Assigning hospitals with
+                        the maximum available resources weighted by proximity.</p>
                 </div>
                 <div class="glass-card reveal reveal-delay-3" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon blue" style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
+                    <div class="stat-icon blue"
+                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
                         <i class="fa fa-lock"></i>
                     </div>
                     <h4>Deadlock Prevention</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">MySQL Transactions (BEGIN, COMMIT, ROLLBACK) for safe concurrent bed booking.</p>
+                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">MySQL Transactions
+                        (BEGIN, COMMIT, ROLLBACK) for safe concurrent bed booking.</p>
                 </div>
             </div>
         </section>
@@ -149,17 +169,20 @@
                 <div style="max-width: 250px;" class="reveal">
                     <div class="step-number">1</div>
                     <h4>Register Account</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Create a secure profile with your medical history and location details.</p>
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Create a secure profile
+                        with your medical history and location details.</p>
                 </div>
                 <div style="max-width: 250px;" class="reveal reveal-delay-1">
                     <div class="step-number">2</div>
                     <h4>Find Resources</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Search for ICU beds, ventilators, or general availability across your city in real-time.</p>
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Search for ICU beds,
+                        ventilators, or general availability across your city in real-time.</p>
                 </div>
                 <div style="max-width: 250px;" class="reveal reveal-delay-2">
                     <div class="step-number">3</div>
                     <h4>Get Help Fast</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Click SOS to trigger intelligent routing and secure an emergency hospital booking.</p>
+                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Click SOS to trigger
+                        intelligent routing and secure an emergency hospital booking.</p>
                 </div>
             </div>
         </section>
@@ -175,25 +198,32 @@
                     <div class="team-avatar">SC</div>
                     <h4>Dr. Sarah Chen</h4>
                     <p style="font-size: 0.825rem; color: var(--teal); font-weight: 600;">Medical Director</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">15+ years in emergency medicine</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">15+ years in emergency
+                        medicine</p>
                 </div>
                 <div class="glass-card reveal reveal-delay-1" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--blue), var(--purple));">DM</div>
+                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--blue), var(--purple));">DM
+                    </div>
                     <h4>David Miller</h4>
                     <p style="font-size: 0.825rem; color: var(--blue); font-weight: 600;">Head of AI Systems</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">ML & algorithm specialist</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">ML & algorithm specialist
+                    </p>
                 </div>
                 <div class="glass-card reveal reveal-delay-2" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--purple), var(--rose));">EP</div>
+                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--purple), var(--rose));">EP
+                    </div>
                     <h4>Elena Petrova</h4>
                     <p style="font-size: 0.825rem; color: var(--purple); font-weight: 600;">Lead Hospital Ops</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Hospital logistics expert</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Hospital logistics expert
+                    </p>
                 </div>
                 <div class="glass-card reveal reveal-delay-3" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--amber), var(--rose));">MA</div>
+                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--amber), var(--rose));">MA
+                    </div>
                     <h4>Mohak Agrawal</h4>
                     <p style="font-size: 0.825rem; color: var(--amber); font-weight: 600;">Full-Stack Developer</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Flask & frontend architect</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Flask & frontend architect
+                    </p>
                 </div>
             </div>
         </section>
@@ -206,7 +236,8 @@
             <div class="footer-grid">
                 <div>
                     <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics.</p>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
+                        analytics.</p>
                     <div class="social-links" style="margin-top: 20px;">
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-linkedin"></i></a>
@@ -236,7 +267,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — Emergency Systems Redefined.
+                &copy; 2026 Arogya Map — Emergency Systems Redefined.
             </div>
         </div>
     </footer>
@@ -244,4 +275,5 @@
     <div id="toast" class="toast"></div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
+
 </html>

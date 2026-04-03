@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -40,10 +42,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -68,16 +72,18 @@
     <header class="hero" style="padding: 60px 0 20px 0;">
         <div class="particles" id="particles"></div>
         <div class="hero-content container" style="text-align: center;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(244, 63, 94, 0.1); color: var(--rose); font-size: 2.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
+            <div
+                style="width: 80px; height: 80px; border-radius: 50%; background: rgba(244, 63, 94, 0.1); color: var(--rose); font-size: 2.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
                 <i class="fa fa-ambulance"></i>
             </div>
             <h1 style="font-size: 2.2rem; margin-bottom: 12px;">Emergency SOS</h1>
-            <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">Request an immediate priority-based hospital bed assignment based on severity and real-time availability.</p>
+            <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">Request an immediate
+                priority-based hospital bed assignment based on severity and real-time availability.</p>
         </div>
     </header>
 
     <main class="container" style="padding-bottom: 80px; display: flex; justify-content: center;">
-        
+
         <!-- Emergency Form -->
         <section id="emergency" class="glass-card reveal" style="width: 100%; max-width: 600px; margin-top: 40px;">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
@@ -105,12 +111,16 @@
                 </div>
                 <div class="form-group">
                     <label>Description of Medical Emergency</label>
-                    <textarea name="description" placeholder="Symptoms, injuries, or immediate needs..." rows="4"></textarea>
+                    <textarea name="description" placeholder="Symptoms, injuries, or immediate needs..."
+                        rows="4"></textarea>
                 </div>
-                <div style="background: rgba(244, 63, 94, 0.05); border-left: 4px solid var(--rose); padding: 12px; border-radius: 4px; margin-bottom: 24px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <strong>Note:</strong> We will request your location to find the nearest equipped hospital automatically. Plase ensure location permissions are granted.
+                <div
+                    style="background: rgba(244, 63, 94, 0.05); border-left: 4px solid var(--rose); padding: 12px; border-radius: 4px; margin-bottom: 24px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <strong>Note:</strong> We will request your location to find the nearest equipped hospital
+                    automatically. Plase ensure location permissions are granted.
                 </div>
-                <button type="submit" class="btn btn-emergency" style="width: 100%; animation: none; font-size: 1.1rem; padding: 16px;" id="send-emergency-btn">
+                <button type="submit" class="btn btn-emergency"
+                    style="width: 100%; animation: none; font-size: 1.1rem; padding: 16px;" id="send-emergency-btn">
                     <i class="fa fa-phone-volume"></i> INITIATE EMERGENCY SOS
                 </button>
             </form>
@@ -121,16 +131,20 @@
     <!-- Emergency Result Modal -->
     <div class="modal-overlay" id="emergencyResultModal">
         <div class="modal-content" style="max-width: 500px;">
-            <button class="modal-close" onclick="toggleModal('emergencyResultModal', false)"><i class="fa fa-times"></i></button>
+            <button class="modal-close" onclick="toggleModal('emergencyResultModal', false)"><i
+                    class="fa fa-times"></i></button>
             <div style="text-align: center; margin-bottom: 20px;">
-                <div style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.1); color: var(--emerald); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px auto;">
+                <div
+                    style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.1); color: var(--emerald); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px auto;">
                     <i class="fa fa-check-circle"></i>
                 </div>
                 <h3>Emergency Assignment Confirmed</h3>
-                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">A hospital bed has been securely assigned. Please proceed immediately.</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">A hospital bed has been
+                    securely assigned. Please proceed immediately.</p>
             </div>
             <div id="emergency-result-content"></div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="toggleModal('emergencyResultModal', false)">
+            <button class="btn btn-primary" style="width: 100%; margin-top: 24px;"
+                onclick="toggleModal('emergencyResultModal', false)">
                 I understand
             </button>
         </div>
@@ -140,7 +154,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — Always there when you need us.
+                &copy; 2026 Arogya Map — Always there when you need us.
             </div>
         </div>
     </footer>
@@ -150,8 +164,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Load user data to pre-fill patient name if possible, or just checking session
-            checkSession(); 
+            checkSession();
         });
     </script>
 </body>
+
 </html>

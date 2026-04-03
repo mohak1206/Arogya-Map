@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Contact Arogya Map — reach out for support, partnerships, or queries about our emergency healthcare network.">
+    <meta name="description"
+        content="Contact Arogya Map — reach out for support, partnerships, or queries about our emergency healthcare network.">
     <title>Arogya Map | Contact Us</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -42,10 +45,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -113,10 +118,12 @@
             </section>
 
             <!-- Contact Info -->
-            <section class="glass-card reveal reveal-delay-1" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <section class="glass-card reveal reveal-delay-1"
+                style="display: flex; flex-direction: column; justify-content: space-between;">
                 <div>
                     <h2 style="margin-bottom: 8px;">Contact Information</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 32px;">Feel free to reach out via email or phone for institutional partnerships or support.</p>
+                    <p style="color: var(--text-secondary); margin-bottom: 32px;">Feel free to reach out via email or
+                        phone for institutional partnerships or support.</p>
 
                     <div class="contact-info-item">
                         <div class="contact-icon stat-icon teal"><i class="fa fa-envelope"></i></div>
@@ -152,7 +159,9 @@
                 </div>
 
                 <!-- Map -->
-                <div id="contact-map" style="height: 200px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 20px; border: 1px solid var(--border-color);"></div>
+                <div id="contact-map"
+                    style="height: 200px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 20px; border: 1px solid var(--border-color);">
+                </div>
             </section>
         </div>
     </main>
@@ -163,7 +172,8 @@
             <div class="footer-grid">
                 <div>
                     <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics.</p>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
+                        analytics.</p>
                     <div class="social-links" style="margin-top: 20px;">
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-linkedin"></i></a>
@@ -193,7 +203,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — Emergency Systems Redefined.
+                &copy; 2026 Arogya Map — Emergency Systems Redefined.
             </div>
         </div>
     </footer>
@@ -216,4 +226,5 @@
         });
     </script>
 </body>
+
 </html>

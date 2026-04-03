@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Your Arogya Map Profile — manage your account, view health history, and track emergency bookings.">
+    <meta name="description"
+        content="Your Arogya Map Profile — manage your account, view health history, and track emergency bookings.">
     <title>Arogya Map | My Profile</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -40,10 +43,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -69,7 +74,9 @@
     <header class="hero" style="padding: 60px 0 40px 0;">
         <div class="particles" id="particles"></div>
         <div class="hero-content container" style="text-align: center;">
-            <div id="profile-avatar-big" style="width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--blue)); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.2rem; font-weight: 700; margin: 0 auto 16px auto; border: 4px solid rgba(255,255,255,0.3);">U</div>
+            <div id="profile-avatar-big"
+                style="width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--teal), var(--blue)); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.2rem; font-weight: 700; margin: 0 auto 16px auto; border: 4px solid rgba(255,255,255,0.3);">
+                U</div>
             <h1 id="profile-hero-name" style="font-size: 2rem;">Loading...</h1>
             <p id="profile-hero-email" style="opacity: 0.8;">loading email...</p>
         </div>
@@ -127,17 +134,17 @@
                     <div class="form-group">
                         <label>Full Name</label>
                         <input type="text" id="profile-name-input" placeholder="Your name" readonly
-                               style="background: var(--bg-primary); cursor: default;">
+                            style="background: var(--bg-primary); cursor: default;">
                     </div>
                     <div class="form-group">
                         <label>Email Address</label>
                         <input type="email" id="profile-email-input" placeholder="Your email" readonly
-                               style="background: var(--bg-primary); cursor: default;">
+                            style="background: var(--bg-primary); cursor: default;">
                     </div>
                     <div class="form-group">
                         <label>Account ID</label>
                         <input type="text" id="profile-id-input" placeholder="—" readonly
-                               style="background: var(--bg-primary); cursor: default;">
+                            style="background: var(--bg-primary); cursor: default;">
                     </div>
                 </div>
             </section>
@@ -154,24 +161,34 @@
                     </div>
                 </div>
                 <div id="profile-health-details" style="display: grid; gap: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-brain" style="color: var(--teal); width: 20px;"></i> Stress Level</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-brain"
+                                style="color: var(--teal); width: 20px;"></i> Stress Level</span>
                         <strong id="prof-stress">—</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-chart-line" style="color: var(--blue); width: 20px;"></i> Productivity</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-chart-line"
+                                style="color: var(--blue); width: 20px;"></i> Productivity</span>
                         <strong id="prof-productivity">—</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-bed" style="color: var(--purple); width: 20px;"></i> Sleep</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-bed"
+                                style="color: var(--purple); width: 20px;"></i> Sleep</span>
                         <strong id="prof-sleep">—</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-shoe-prints" style="color: var(--amber); width: 20px;"></i> Steps</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-shoe-prints"
+                                style="color: var(--amber); width: 20px;"></i> Steps</span>
                         <strong id="prof-steps">—</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-display" style="color: var(--rose); width: 20px;"></i> Screen Time</span>
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
+                        <span style="color: var(--text-secondary);"><i class="fa fa-display"
+                                style="color: var(--rose); width: 20px;"></i> Screen Time</span>
                         <strong id="prof-screen">—</strong>
                     </div>
                 </div>
@@ -197,19 +214,28 @@
                     </div>
                 </div>
                 <div style="display: grid; gap: 12px;">
-                    <a href="/hospitals" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest Hospital
+                    <a href="/hospitals" class="btn btn-outline"
+                        style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest
+                        Hospital
                     </a>
-                    <a href="/emergency" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS Request
+                    <a href="/emergency" class="btn btn-outline"
+                        style="width: 100%; justify-content: flex-start; gap: 12px;">
+                        <i class="fa fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS
+                        Request
                     </a>
-                    <a href="/dashboard" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;" onclick="toggleModal('healthModal', true); return false;">
-                        <i class="fa fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health Entry
+                    <a href="/dashboard" class="btn btn-outline"
+                        style="width: 100%; justify-content: flex-start; gap: 12px;"
+                        onclick="toggleModal('healthModal', true); return false;">
+                        <i class="fa fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health
+                        Entry
                     </a>
-                    <a href="/about" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                    <a href="/about" class="btn btn-outline"
+                        style="width: 100%; justify-content: flex-start; gap: 12px;">
                         <i class="fa fa-circle-info" style="color: var(--purple); width: 20px;"></i> About Arogya Map
                     </a>
-                    <a href="/contact" class="btn btn-outline" style="width: 100%; justify-content: flex-start; gap: 12px;">
+                    <a href="/contact" class="btn btn-outline"
+                        style="width: 100%; justify-content: flex-start; gap: 12px;">
                         <i class="fa fa-envelope" style="color: var(--amber); width: 20px;"></i> Contact Support
                     </a>
                 </div>
@@ -222,7 +248,7 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — All Rights Reserved.
+                &copy; 2026 Arogya Map — All Rights Reserved.
             </div>
         </div>
     </footer>
@@ -273,4 +299,5 @@
         });
     </script>
 </body>
+
 </html>

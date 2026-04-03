@@ -1,14 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Arogya Map Dashboard — Real-time hospital tracking, health analytics, and emergency management.">
+    <meta name="description"
+        content="Arogya Map Dashboard — Real-time hospital tracking, health analytics, and emergency management.">
     <title>Arogya Map | Smart Healthcare Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -28,8 +31,10 @@
             <a href="/emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">Health</div>
-            <a href="#" onclick="toggleModal('healthModal', true); return false;"><i class="fa fa-heart-circle-plus"></i> Log Health Data</a>
-            <a href="#" onclick="toggleModal('stressModal', true); return false;"><i class="fa fa-wand-magic-sparkles"></i> AI Wellness Tips</a>
+            <a href="#" onclick="toggleModal('healthModal', true); return false;"><i
+                    class="fa fa-heart-circle-plus"></i> Log Health Data</a>
+            <a href="#" onclick="toggleModal('stressModal', true); return false;"><i
+                    class="fa fa-wand-magic-sparkles"></i> AI Wellness Tips</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
             <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
@@ -45,10 +50,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -75,7 +82,8 @@
         <div class="particles" id="particles"></div>
         <div class="hero-content container">
             <h1>Smart Emergency Healthcare</h1>
-            <p>Real-time hospital availability tracking, priority-based emergency routing, and personalized AI-driven health insights.</p>
+            <p>Real-time hospital availability tracking, priority-based emergency routing, and personalized AI-driven
+                health insights.</p>
             <div class="hero-actions">
                 <a href="/hospitals" class="btn btn-primary" id="find-hospital-btn">
                     <i class="fa fa-hospital"></i> Find Nearest Hospital
@@ -140,12 +148,13 @@
             <h2 class="section-title reveal">Your Health Dashboard</h2>
             <p class="section-subtitle reveal">Comprehensive view of your well-being</p>
         </div>
-        
+
         <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
 
             <!-- Sleep Chart -->
             <section class="glass-card reveal">
-                <h3 style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h3
+                    style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
                     <span><i class="fa fa-bed" style="color: var(--purple);"></i> Sleep Trend</span>
                     <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">Last 7 Days</span>
                 </h3>
@@ -156,7 +165,8 @@
 
             <!-- Steps Chart -->
             <section class="glass-card reveal reveal-delay-1">
-                <h3 style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h3
+                    style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
                     <span><i class="fa fa-shoe-prints" style="color: var(--amber);"></i> Steps Activity</span>
                     <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">Last 7 Days</span>
                 </h3>
@@ -166,11 +176,13 @@
             </section>
 
             <!-- Wellness Score -->
-            <section class="glass-card reveal reveal-delay-2" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <section class="glass-card reveal reveal-delay-2"
+                style="display: flex; flex-direction: column; justify-content: space-between;">
                 <h3 style="margin-bottom: 12px; font-size: 1.1rem;">
                     <i class="fa fa-heart-pulse" style="color: var(--teal);"></i> AI Wellness Score
                 </h3>
-                <div style="text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <div
+                    style="text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
                     <div style="width: 140px; height: 140px;">
                         <canvas id="screenChart" style="width: 100%; height: 100%;"></canvas>
                     </div>
@@ -181,7 +193,8 @@
                 </div>
                 <!-- Action Buttons -->
                 <div style="margin-top: 16px; display: flex; gap: 8px;">
-                    <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="toggleModal('healthModal', true)" id="log-entry-btn">
+                    <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="toggleModal('healthModal', true)"
+                        id="log-entry-btn">
                         <i class="fa fa-plus-circle"></i> Log
                     </button>
                     <a href="/contact" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
@@ -200,7 +213,8 @@
             <div class="footer-grid">
                 <div>
                     <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics for emergency response.</p>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
+                        analytics for emergency response.</p>
                     <div class="social-links" style="margin-top: 20px;">
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-linkedin"></i></a>
@@ -233,7 +247,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — All Rights Reserved. Built with Flask, JavaScript & AI.
+                &copy; 2026 Arogya Map — All Rights Reserved. Built with Flask, JavaScript & AI.
             </div>
         </div>
     </footer>
@@ -251,12 +265,16 @@
                 <p>Based on your current stress level, our AI recommends:</p>
                 <ul style="margin-top: 16px; display: grid; gap: 12px;" id="stress-tip-list">
                     <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> 10-minute mindful breathing</li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Reducing screen time by 1 hour</li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Prioritizing 8 hours of sleep tonight</li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Take a 15-minute walk outside</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Reducing screen time by 1 hour
+                    </li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Prioritizing 8 hours of sleep
+                        tonight</li>
+                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Take a 15-minute walk outside
+                    </li>
                 </ul>
             </div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 28px;" onclick="toggleModal('stressModal', false)">GOT IT</button>
+            <button class="btn btn-primary" style="width: 100%; margin-top: 28px;"
+                onclick="toggleModal('stressModal', false)">GOT IT</button>
         </div>
     </div>
 
@@ -288,13 +306,15 @@
                 </div>
                 <div class="form-group">
                     <label>Screen Time (Hours)</label>
-                    <input type="number" step="0.1" name="screen_time_hours" min="0" max="24" placeholder="e.g. 5.5" required>
+                    <input type="number" step="0.1" name="screen_time_hours" min="0" max="24" placeholder="e.g. 5.5"
+                        required>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
                     <i class="fa fa-check"></i> SAVE DATA
                 </button>
             </form>
-            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('healthModal', false)">CANCEL</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;"
+                onclick="toggleModal('healthModal', false)">CANCEL</button>
         </div>
     </div>
 
@@ -307,7 +327,8 @@
                     <i class="fa fa-times"></i>
                 </button>
             </div>
-            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong id="bed-hospital-name"></strong></p>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong
+                    id="bed-hospital-name"></strong></p>
             <form id="bed-request-form" onsubmit="submitBedRequest(event)">
                 <input type="hidden" name="hospital_id" id="bed-hospital-id">
                 <div class="form-group">
@@ -325,7 +346,8 @@
                     <i class="fa fa-check-circle"></i> CONFIRM BOOKING
                 </button>
             </form>
-            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('bedModal', false)">CANCEL</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;"
+                onclick="toggleModal('bedModal', false)">CANCEL</button>
         </div>
     </div>
 
@@ -333,13 +355,15 @@
     <div id="emergencyResultModal" class="modal-overlay">
         <div class="modal-content" style="text-align: center;">
             <div style="margin-bottom: 20px;">
-                <div class="stat-icon teal" style="width: 70px; height: 70px; font-size: 2rem; margin: 0 auto 16px auto;">
+                <div class="stat-icon teal"
+                    style="width: 70px; height: 70px; font-size: 2rem; margin: 0 auto 16px auto;">
                     <i class="fa fa-check-circle"></i>
                 </div>
                 <h2>Hospital Assigned!</h2>
             </div>
             <div id="emergency-result-content" style="text-align: left;"></div>
-            <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="toggleModal('emergencyResultModal', false)">
+            <button class="btn btn-primary" style="width: 100%; margin-top: 24px;"
+                onclick="toggleModal('emergencyResultModal', false)">
                 <i class="fa fa-check"></i> OK
             </button>
         </div>
@@ -348,4 +372,5 @@
     <div id="toast" class="toast"></div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
+
 </html>

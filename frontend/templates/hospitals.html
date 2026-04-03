@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Find hospitals near you with real-time bed availability, ICU status, and ventilator tracking.">
+    <meta name="description"
+        content="Find hospitals near you with real-time bed availability, ICU status, and ventilator tracking.">
     <title>Arogya Map | Find Hospitals Near You</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+
 <body class="has-sidebar">
     <div class="bg-mesh"></div>
 
@@ -42,10 +45,12 @@
                 </div>
             </div>
             <div class="sidebar-actions">
-                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
+                    title="Toggle Theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
+                    style="color: var(--rose);">
                     <i class="fa fa-right-from-bracket"></i> Logout
                 </button>
             </div>
@@ -72,7 +77,8 @@
         <div class="particles" id="particles"></div>
         <div class="hero-content container">
             <h1><i class="fa fa-hospital" style="font-size: 2.5rem;"></i> Hospital Finder</h1>
-            <p>Locate nearby hospitals with real-time bed availability, ICU capacity, and ventilator tracking — powered by Haversine distance algorithm.</p>
+            <p>Locate nearby hospitals with real-time bed availability, ICU capacity, and ventilator tracking — powered
+                by Haversine distance algorithm.</p>
             <div class="hero-actions">
                 <button class="btn btn-primary" onclick="useMyLocation()" id="location-btn">
                     <i class="fa fa-location-crosshairs"></i> Detect My Location
@@ -87,12 +93,14 @@
     <main class="container" style="margin-top: 40px;">
 
         <!-- Location Info -->
-        <div class="glass-card reveal" style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div class="glass-card reveal"
+            style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
             <div class="flex" style="gap: 12px;">
                 <div class="stat-icon teal"><i class="fa fa-map-marker-alt"></i></div>
                 <div>
                     <h4 id="location-status">Location not detected</h4>
-                    <p style="font-size: 0.85rem;" id="location-coords">Click "Detect My Location" to find hospitals near you</p>
+                    <p style="font-size: 0.85rem;" id="location-coords">Click "Detect My Location" to find hospitals
+                        near you</p>
                 </div>
             </div>
             <div class="flex" style="gap: 8px;">
@@ -102,7 +110,8 @@
 
         <!-- Search -->
         <div class="search-bar reveal">
-            <input type="text" id="hospital-search" placeholder="Search by hospital name, city, or speciality..." oninput="debounceSearch(this.value)">
+            <input type="text" id="hospital-search" placeholder="Search by hospital name, city, or speciality..."
+                oninput="debounceSearch(this.value)">
             <button class="btn btn-primary" onclick="searchHospitals()" id="search-btn">
                 <i class="fa fa-search"></i> Search
             </button>
@@ -133,7 +142,8 @@
             <div class="footer-grid">
                 <div>
                     <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data analytics.</p>
+                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
+                        analytics.</p>
                     <div class="social-links" style="margin-top: 20px;">
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-linkedin"></i></a>
@@ -163,7 +173,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                &copy; 2024 Arogya Map — All Rights Reserved.
+                &copy; 2026 Arogya Map — All Rights Reserved.
             </div>
         </div>
     </footer>
@@ -177,7 +187,8 @@
                     <i class="fa fa-times"></i>
                 </button>
             </div>
-            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong id="bed-hospital-name"></strong></p>
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong
+                    id="bed-hospital-name"></strong></p>
             <form id="bed-request-form" onsubmit="submitBedRequest(event)">
                 <input type="hidden" name="hospital_id" id="bed-hospital-id">
                 <div class="form-group">
@@ -195,7 +206,8 @@
                     <i class="fa fa-check-circle"></i> CONFIRM BOOKING
                 </button>
             </form>
-            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="toggleModal('bedModal', false)">CANCEL</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;"
+                onclick="toggleModal('bedModal', false)">CANCEL</button>
         </div>
     </div>
 
@@ -208,4 +220,5 @@
         });
     </script>
 </body>
+
 </html>
