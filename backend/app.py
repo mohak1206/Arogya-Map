@@ -245,17 +245,33 @@ def get_user_profile():
 
 @app.route('/api/hospitals', methods=['GET'])
 def get_hospitals():
-    """Return all hospitals with full bed availability data."""
+    """Return all hospitals ordered by distance using Haversine formula."""
     try:
+        # Default to Palghar center if no coords provided
+        lat = request.args.get('lat', 19.6967)
+        lng = request.args.get('lng', 72.7670)
+        
+        try:
+            user_lat = float(lat)
+            user_lng = float(lng)
+        except ValueError:
+            user_lat, user_lng = 19.6967, 72.7670
+
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM hospitals ORDER BY name')
+        cur.execute('SELECT * FROM hospitals')
         hospitals = cur.fetchall()
         cur.close()
-        # Convert Decimal to float for JSON serialization
+        
         for h in hospitals:
             h['latitude'] = float(h['latitude'])
             h['longitude'] = float(h['longitude'])
-        return jsonify({'hospitals': hospitals}), 200
+            h['distance_km'] = round(
+                haversine(user_lat, user_lng, h['latitude'], h['longitude']), 2
+            )
+            
+        # Sort by distance
+        hospitals_sorted = sorted(hospitals, key=lambda x: x['distance_km'])
+        return jsonify({'hospitals': hospitals_sorted}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
