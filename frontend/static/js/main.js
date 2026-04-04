@@ -378,7 +378,7 @@ function renderCharts(rows) {
 // ═══════════════════════════════════════════════════════════
 async function loadHospitals(lat = null, lng = null) {
   let endpoint = '/hospitals';
-  if (lat && lng) endpoint = `/hospitals/nearest?lat=${lat}&lng=${lng}`;
+  if (lat && lng) endpoint = `/hospitals?lat=${lat}&lng=${lng}`;
 
   try {
     const data = await apiFetch(endpoint);
@@ -764,7 +764,7 @@ function initHospitalMap() {
   const mapEl = document.getElementById('hospital-map');
   if (!mapEl || typeof L === 'undefined') return;
 
-  hospitalMap = L.map('hospital-map').setView([22.5, 78.5], 5); // India center
+  hospitalMap = L.map('hospital-map').setView([19.6967, 72.7670], 14); // Palghar center
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -830,7 +830,10 @@ function updateMapMarkers(hospitals, userLat = null, userLng = null) {
               <div>💨 Ventilators: <strong>${h.available_ventilators}</strong></div>
               ${h.distance_km != null ? `<div>📏 Distance: <strong>${h.distance_km} km</strong></div>` : ''}
             </div>
-            ${h.contact ? `<div style="margin-top: 8px; font-size: 12px;">📞 ${h.contact}</div>` : ''}
+            ${h.contact ? `<div style="margin-top: 8px; font-size: 12px; font-weight: 600; color: #333;">📞 Contact: ${h.contact}</div>` : ''}
+            <button class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 6px; font-size: 12px;" onclick="openBedModal(${h.id}, '${h.name.replace(/'/g, "\\'")}')" ${!isAvailable ? 'disabled' : ''}>
+              <i class="fa fa-bed"></i> Book Bed
+            </button>
           </div>
         `);
       hospitalMarkers.push(marker);
@@ -840,10 +843,7 @@ function updateMapMarkers(hospitals, userLat = null, userLng = null) {
 
   if (userLat && userLng) bounds.push([userLat, userLng]);
 
-  // Fit map to show all markers
-  if (bounds.length > 0) {
-    hospitalMap.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
-  }
+  // Removed fitBounds to ensure Palghar coordinate centering per user request
 }
 
 // ═══════════════════════════════════════════════════════════
