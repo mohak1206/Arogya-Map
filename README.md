@@ -8,7 +8,7 @@ Arogya Map is a full-stack healthcare dashboard designed to optimize emergency r
 - **Comprehensive Admin Panel**: Administrators can manage hospitals, users, emergency patient assigned queues, and view detailed system analytics via an intuitive dashboard.
 - **Smart Hospital Finder**: Uses the **Haversine formula** to locate the nearest hospitals with an interactive **Leaflet.js** map.
 - **Dedicated Emergency SOS Interface**: Intelligent, standalone routing system that automatically assigns patients to hospitals based on bed availability and triage severity (**Greedy Algorithm** & **Priority Queue**).
-- **Health Analytics & Profiles**: Interactive charts using **Chart.js** to track and display user sleep, steps, stress, and activity within personal profiles.
+- **Health Analytics & Profiles**: Interactive charts using **C hart.js** to track and display user sleep, steps, stress, and activity within personal profiles.
 - **Real-time Occupancy**: Tracks available beds, ICU units, and ventilators with live occupancy bars.
 - **Secure Authentication**: Password hashing with **Werkzeug** and robust session-based routing constraints.
 - **Premium User-Interface**: Mobile-first glassmorphism design with a dynamic, user-selectable light/dark theme.
@@ -51,7 +51,7 @@ Open your browser and navigate to:
 ## 🏗️ Folder Structure
 
 ```text
-HEAL MAPS/
+Arogya-Map/
 ├── run.py                          # Entry point — starts Flask server
 ├── README.md
 ├── backend/
@@ -59,14 +59,22 @@ HEAL MAPS/
 │   ├── admin_routes.py             # Admin Blueprint (Role-controlled API routes & views)
 │   ├── admin_db_setup.py           # Script to initialize admin schema/data
 │   ├── config.py                   # MySQL configuration
+│   ├── database.py                 # Database connection utilities
+│   ├── db_migration_flask.py       # Database migration script for Flask
+│   ├── db_migration.py             # Database migration utilities
 │   ├── requirements.txt            # Python dependencies
+│   ├── update_db.py                # Script to update database
 │   └── database/
 │       └── arogyamap.sql            # Schema + seed data
+├── database/
+│   └── arogyamap.sql                # Additional schema + seed data
 └── frontend/
     ├── static/
     │   ├── css/style.css           # Premium design system (light/dark theme)
-    │   ├── js/main.js              # Frontend logic, maps, charts, API calls
-    │   └── images/logo.png         # Project logo
+    │   ├── js/
+    │   │   ├── admin.js            # Admin panel JavaScript
+    │   │   └── main.js             # Frontend logic, maps, charts, API calls
+    │   └── images/                 # Static images (logo, icons, etc.)
     └── templates/
         ├── index.html              # Login Page
         ├── signup.html             # Signup Page
