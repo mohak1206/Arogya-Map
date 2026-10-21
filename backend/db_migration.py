@@ -1,13 +1,16 @@
 import mysql.connector
+from config import Config
 
 try:
     conn = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="Mohak@12",      # Default config based on config.py if no password
-        database="arogyamap_db"
+        host=Config.MYSQL_HOST,
+        port=Config.MYSQL_PORT,
+        user=Config.MYSQL_USER,
+        password=Config.MYSQL_PASSWORD,
+        database=Config.MYSQL_DB
     )
     cursor = conn.cursor()
+
     
     # 1. Add role column if not exists
     try:

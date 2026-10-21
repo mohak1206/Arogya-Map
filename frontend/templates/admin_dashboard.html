@@ -64,21 +64,21 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/admin/dashboard" class="sidebar-logo">
-                <i class="fa fa-shield-halved"></i>
+                <i class="fa-solid fa-shield-halved"></i>
                 <span>Arogya Map <span class="admin-badge">Admin</span></span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Command Center</div>
-            <a href="/admin/dashboard" class="active"><i class="fa fa-chart-pie"></i> Dashboard</a>
-            <a href="/admin/hospitals"><i class="fa fa-hospital"></i> Hospitals</a>
-            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
-            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
-            <a href="/admin/reports"><i class="fa fa-file-invoice"></i> Reports</a>
+            <a href="/admin/dashboard" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa-solid fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa-solid fa-users"></i> Users</a>
+            <a href="/admin/reports"><i class="fa-solid fa-file-invoice"></i> Reports</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
-            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+            <a href="/dashboard"><i class="fa-solid fa-arrow-left"></i> User Dashboard</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -93,7 +93,7 @@
                     <i class="fas fa-sun"></i> Theme
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
-                    <i class="fa fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
@@ -104,10 +104,10 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
             <a href="/admin/dashboard" class="nav-logo">
-                <i class="fa fa-shield-halved"></i>
+                <i class="fa-solid fa-shield-halved"></i>
                 <span>Admin Panel</span>
             </a>
             <div style="width: 40px;"></div>
@@ -122,7 +122,7 @@
         <section class="stats-grid" id="admin-stats-grid">
             <div class="glass-card stat-card reveal">
                 <div class="stat-header">
-                    <div class="stat-icon teal"><i class="fa fa-hospital"></i></div>
+                    <div class="stat-icon teal"><i class="fa-solid fa-hospital"></i></div>
                 </div>
                 <div class="stat-label">Total Hospitals</div>
                 <div class="stat-value" id="stat-hospitals">0</div>
@@ -130,7 +130,7 @@
 
             <div class="glass-card stat-card reveal reveal-delay-1">
                 <div class="stat-header">
-                    <div class="stat-icon blue"><i class="fa fa-bed"></i></div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-bed"></i></div>
                 </div>
                 <div class="stat-label">Available Beds (Network)</div>
                 <div class="stat-value" id="stat-beds">0</div>
@@ -138,7 +138,7 @@
 
             <div class="glass-card stat-card reveal reveal-delay-2">
                 <div class="stat-header">
-                    <div class="stat-icon amber"><i class="fa fa-truck-medical"></i></div>
+                    <div class="stat-icon amber"><i class="fa-solid fa-truck-medical"></i></div>
                 </div>
                 <div class="stat-label">Emergencies Today</div>
                 <div class="stat-value" id="stat-requests">0</div>
@@ -146,7 +146,7 @@
 
             <div class="glass-card stat-card reveal reveal-delay-3">
                 <div class="stat-header">
-                    <div class="stat-icon purple"><i class="fa fa-users"></i></div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
                 </div>
                 <div class="stat-label">Total Users</div>
                 <div class="stat-value" id="stat-users">0</div>
@@ -156,7 +156,7 @@
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
             <!-- Hospital Capacity Overview -->
             <div class="glass-card reveal">
-                <h3><i class="fa fa-building-user teal"></i> Hospital Capacity</h3>
+                <h3><i class="fa-solid fa-building-user teal"></i> Hospital Capacity</h3>
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table class="admin-table">
                         <thead>
@@ -175,7 +175,7 @@
 
             <!-- Recent Emergency Requests -->
             <div class="glass-card reveal">
-                <h3><i class="fa fa-bell amber"></i> Active Dispatch Board</h3>
+                <h3><i class="fa-solid fa-bell amber"></i> Active Dispatch Board</h3>
                 <div style="overflow-x: auto; margin-top: 16px;">
                     <table class="admin-table">
                         <thead>

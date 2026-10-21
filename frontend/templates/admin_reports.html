@@ -19,20 +19,20 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/admin/dashboard" class="sidebar-logo">
-                <i class="fa fa-shield-halved"></i>
+                <i class="fa-solid fa-shield-halved"></i>
                 <span>Arogya Map <span class="admin-badge">Admin</span></span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Command Center</div>
-            <a href="/admin/dashboard"><i class="fa fa-chart-pie"></i> Dashboard</a>
-            <a href="/admin/hospitals"><i class="fa fa-hospital"></i> Hospitals</a>
-            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
-            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
-            <a href="/admin/reports" class="active"><i class="fa fa-file-invoice"></i> Reports</a>
+            <a href="/admin/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa-solid fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa-solid fa-users"></i> Users</a>
+            <a href="/admin/reports" class="active"><i class="fa-solid fa-file-invoice"></i> Reports</a>
             <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
-            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+            <a href="/dashboard"><i class="fa-solid fa-arrow-left"></i> User Dashboard</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -42,15 +42,15 @@
                     <div class="user-email-sidebar" id="user-email">admin@system.com</div>
                 </div>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);"><i class="fa fa-right-from-bracket"></i> Logout</button>
+            <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
         </div>
     </aside>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
-            <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa fa-bars"></i></button>
-            <a href="/admin/dashboard" class="nav-logo"><i class="fa fa-shield-halved"></i><span>Admin Panel</span></a>
+            <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <a href="/admin/dashboard" class="nav-logo"><i class="fa-solid fa-shield-halved"></i><span>Admin Panel</span></a>
             <div style="width: 40px;"></div>
         </div>
     </nav>
@@ -62,28 +62,28 @@
         <section class="stats-grid reveal" id="reports-stats-grid" style="margin-top: 24px;">
             <div class="glass-card stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon purple"><i class="fa fa-calendar-week"></i></div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-calendar-week"></i></div>
                 </div>
                 <div class="stat-label">Emergencies This Week</div>
                 <div class="stat-value" id="r-reqs-week">0</div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon teal"><i class="fa fa-stopwatch"></i></div>
+                    <div class="stat-icon teal"><i class="fa-solid fa-stopwatch"></i></div>
                 </div>
                 <div class="stat-label">Avg Response Time</div>
                 <div class="stat-value" id="r-avg-time">--</div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon blue"><i class="fa fa-building-circle-check"></i></div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-building-circle-check"></i></div>
                 </div>
                 <div class="stat-label">Most Used Hospital</div>
                 <div class="stat-value" id="r-most-used" style="font-size: 1.2rem;">--</div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon amber"><i class="fa fa-fire"></i></div>
+                    <div class="stat-icon amber"><i class="fa-solid fa-fire"></i></div>
                 </div>
                 <div class="stat-label">Busiest Day</div>
                 <div class="stat-value" id="r-busiest-day" style="font-size: 1.2rem; text-transform: capitalize;">--</div>
@@ -92,25 +92,25 @@
 
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
             <div class="glass-card chart-wrapper reveal">
-                <h3><i class="fa fa-chart-bar blue"></i> Emergency Requests (Last 7 Days)</h3>
+                <h3><i class="fa-solid fa-chart-bar blue"></i> Emergency Requests (Last 7 Days)</h3>
                 <div class="chart-container-large">
                     <canvas id="requestsChart"></canvas>
                 </div>
             </div>
             <div class="glass-card chart-wrapper reveal">
-                <h3><i class="fa fa-chart-pie purple"></i> Requests by Priority</h3>
+                <h3><i class="fa-solid fa-chart-pie purple"></i> Requests by Priority</h3>
                 <div class="chart-container-large">
                     <canvas id="priorityChart"></canvas>
                 </div>
             </div>
             <div class="glass-card chart-wrapper reveal">
-                <h3><i class="fa fa-ranking-star amber"></i> Top 5 Most Used Hospitals</h3>
+                <h3><i class="fa-solid fa-ranking-star amber"></i> Top 5 Most Used Hospitals</h3>
                 <div class="chart-container-large">
                     <canvas id="hospitalsChart"></canvas>
                 </div>
             </div>
             <div class="glass-card chart-wrapper reveal">
-                <h3><i class="fa fa-chart-line teal"></i> Bed Availability Trend (Snapshot)</h3>
+                <h3><i class="fa-solid fa-chart-line teal"></i> Bed Availability Trend (Snapshot)</h3>
                 <div class="chart-container-large">
                     <canvas id="bedsChart"></canvas>
                 </div>

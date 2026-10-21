@@ -17,21 +17,21 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/dashboard" class="sidebar-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Main</div>
-            <a href="/dashboard"><i class="fa fa-grid-2"></i> Dashboard</a>
-            <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
-            <a href="/emergency" class="emergency-link active"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+            <a href="/dashboard"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+            <a href="/hospitals"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
+            <a href="/emergency" class="emergency-link active"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
-            <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
-            <a href="/contact"><i class="fa fa-envelope"></i> Contact</a>
-            <a href="/profile"><i class="fa fa-user"></i> Profile</a>
+            <a href="/about"><i class="fa-solid fa-circle-info"></i> About Us</a>
+            <a href="/contact"><i class="fa-solid fa-envelope"></i> Contact</a>
+            <a href="/profile"><i class="fa-solid fa-user"></i> Profile</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -48,7 +48,7 @@
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
                     style="color: var(--rose);">
-                    <i class="fa fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
@@ -59,10 +59,10 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
             <a href="/dashboard" class="nav-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
             <div style="width: 40px;"></div>
@@ -74,7 +74,7 @@
         <div class="hero-content container" style="text-align: center;">
             <div
                 style="width: 80px; height: 80px; border-radius: 50%; background: rgba(244, 63, 94, 0.1); color: var(--rose); font-size: 2.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
-                <i class="fa fa-ambulance"></i>
+                <i class="fa-solid fa-ambulance"></i>
             </div>
             <h1 style="font-size: 2.2rem; margin-bottom: 12px;">Emergency SOS</h1>
             <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto;">Request an immediate
@@ -88,7 +88,7 @@
         <section id="emergency" class="glass-card reveal" style="width: 100%; max-width: 600px; margin-top: 40px;">
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
                 <div class="stat-icon rose" style="animation: none;">
-                    <i class="fa fa-triangle-exclamation"></i>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
                     <h2 style="margin-bottom: 2px;">Submit Request</h2>
@@ -121,7 +121,7 @@
                 </div>
                 <button type="submit" class="btn btn-emergency"
                     style="width: 100%; animation: none; font-size: 1.1rem; padding: 16px;" id="send-emergency-btn">
-                    <i class="fa fa-phone-volume"></i> INITIATE EMERGENCY SOS
+                    <i class="fa-solid fa-phone-volume"></i> INITIATE EMERGENCY SOS
                 </button>
             </form>
         </section>
@@ -132,11 +132,11 @@
     <div class="modal-overlay" id="emergencyResultModal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="modal-close" onclick="toggleModal('emergencyResultModal', false)"><i
-                    class="fa fa-times"></i></button>
+                    class="fa-solid fa-times"></i></button>
             <div style="text-align: center; margin-bottom: 20px;">
                 <div
                     style="width: 60px; height: 60px; background: rgba(16, 185, 129, 0.1); color: var(--emerald); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 16px auto;">
-                    <i class="fa fa-check-circle"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                 </div>
                 <h3>Emergency Assignment Confirmed</h3>
                 <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">A hospital bed has been

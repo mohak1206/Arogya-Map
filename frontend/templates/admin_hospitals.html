@@ -39,20 +39,20 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/admin/dashboard" class="sidebar-logo">
-                <i class="fa fa-shield-halved"></i>
+                <i class="fa-solid fa-shield-halved"></i>
                 <span>Arogya Map <span class="admin-badge">Admin</span></span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Command Center</div>
-            <a href="/admin/dashboard"><i class="fa fa-chart-pie"></i> Dashboard</a>
-            <a href="/admin/hospitals" class="active"><i class="fa fa-hospital"></i> Hospitals</a>
-            <a href="/admin/patients"><i class="fa fa-truck-medical"></i> Patients</a>
-            <a href="/admin/users"><i class="fa fa-users"></i> Users</a>
-            <a href="/admin/reports"><i class="fa fa-file-invoice"></i> Reports</a>
+            <a href="/admin/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospitals" class="active"><i class="fa-solid fa-hospital"></i> Hospitals</a>
+            <a href="/admin/patients"><i class="fa-solid fa-truck-medical"></i> Patients</a>
+            <a href="/admin/users"><i class="fa-solid fa-users"></i> Users</a>
+            <a href="/admin/reports"><i class="fa-solid fa-file-invoice"></i> Reports</a>
             <div class="sidebar-nav-label" style="margin-top: 12px;">Portal</div>
-            <a href="/dashboard"><i class="fa fa-arrow-left"></i> User Dashboard</a>
+            <a href="/dashboard"><i class="fa-solid fa-arrow-left"></i> User Dashboard</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -67,7 +67,7 @@
                     <i class="fas fa-sun"></i>
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
-                    <i class="fa fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
@@ -79,11 +79,11 @@
         
         <div class="top-controls reveal">
             <div class="search-box">
-                <i class="fa fa-search teal"></i>
+                <i class="fa-solid fa-search teal"></i>
                 <input type="text" id="hospital-search" placeholder="Search hospitals..." onkeyup="filterHospitals()">
             </div>
             <button class="btn btn-primary" onclick="openHospitalModal()">
-                <i class="fa fa-plus"></i> Add New Hospital
+                <i class="fa-solid fa-plus"></i> Add New Hospital
             </button>
         </div>
 
@@ -110,9 +110,9 @@
     <div id="hospitalModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2 id="hospital-modal-title"><i class="fa fa-hospital" style="color: var(--teal);"></i> Add Hospital</h2>
+                <h2 id="hospital-modal-title"><i class="fa-solid fa-hospital" style="color: var(--teal);"></i> Add Hospital</h2>
                 <button class="btn btn-ghost" onclick="toggleModal('hospitalModal', false)">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <form id="hospital-form" onsubmit="submitHospitalForm(event)">
@@ -165,7 +165,7 @@
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px;">
-                    <i class="fa fa-save"></i> Save Hospital
+                    <i class="fa-solid fa-save"></i> Save Hospital
                 </button>
             </form>
         </div>
@@ -175,9 +175,9 @@
     <div id="bedUpdateModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 400px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fa fa-bed" style="color: var(--blue);"></i> Update Beds</h2>
+                <h2><i class="fa-solid fa-bed" style="color: var(--blue);"></i> Update Beds</h2>
                 <button class="btn btn-ghost" onclick="toggleModal('bedUpdateModal', false)">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <p id="bed-update-hospital-name" style="margin-bottom: 12px; color: var(--text-secondary);"></p>
@@ -192,7 +192,7 @@
                     <input type="number" id="b_icu_avail" required>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px;">
-                    <i class="fa fa-sync"></i> Refresh Inventory
+                    <i class="fa-solid fa-sync"></i> Refresh Inventory
                 </button>
             </form>
         </div>

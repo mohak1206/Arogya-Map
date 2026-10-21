@@ -18,21 +18,21 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/dashboard" class="sidebar-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Main</div>
-            <a href="/dashboard"><i class="fa fa-grid-2"></i> Dashboard</a>
-            <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
-            <a href="/emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+            <a href="/dashboard"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+            <a href="/hospitals"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
+            <a href="/emergency" class="emergency-link"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
-            <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
-            <a href="/contact"><i class="fa fa-envelope"></i> Contact</a>
-            <a href="/profile" class="active"><i class="fa fa-user"></i> Profile</a>
+            <a href="/about"><i class="fa-solid fa-circle-info"></i> About Us</a>
+            <a href="/contact"><i class="fa-solid fa-envelope"></i> Contact</a>
+            <a href="/profile" class="active"><i class="fa-solid fa-user"></i> Profile</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -49,7 +49,7 @@
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
                     style="color: var(--rose);">
-                    <i class="fa fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
@@ -60,10 +60,10 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
             <a href="/dashboard" class="nav-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
             <div style="width: 40px;"></div>
@@ -88,28 +88,28 @@
         <section class="stats-grid" style="margin-top: -30px; margin-bottom: 40px;">
             <div class="glass-card stat-card reveal">
                 <div class="stat-header">
-                    <div class="stat-icon teal"><i class="fa fa-bed"></i></div>
+                    <div class="stat-icon teal"><i class="fa-solid fa-bed"></i></div>
                 </div>
                 <div class="stat-label">Bed Bookings</div>
                 <div class="stat-value" id="profile-bookings">0</div>
             </div>
             <div class="glass-card stat-card reveal reveal-delay-1">
                 <div class="stat-header">
-                    <div class="stat-icon rose"><i class="fa fa-ambulance"></i></div>
+                    <div class="stat-icon rose"><i class="fa-solid fa-ambulance"></i></div>
                 </div>
                 <div class="stat-label">Emergency Requests</div>
                 <div class="stat-value" id="profile-emergencies">0</div>
             </div>
             <div class="glass-card stat-card reveal reveal-delay-2">
                 <div class="stat-header">
-                    <div class="stat-icon blue"><i class="fa fa-chart-line"></i></div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-chart-line"></i></div>
                 </div>
                 <div class="stat-label">Wellness Score</div>
                 <div class="stat-value" id="profile-wellness">—</div>
             </div>
             <div class="glass-card stat-card reveal reveal-delay-3">
                 <div class="stat-header">
-                    <div class="stat-icon purple"><i class="fa fa-calendar-check"></i></div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-calendar-check"></i></div>
                 </div>
                 <div class="stat-label">Member Since</div>
                 <div class="stat-value" id="profile-joined" style="font-size: 1.4rem;">—</div>
@@ -123,7 +123,7 @@
             <section class="glass-card reveal">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
                     <div class="stat-icon teal" style="animation: none;">
-                        <i class="fa fa-user-gear"></i>
+                        <i class="fa-solid fa-user-gear"></i>
                     </div>
                     <div>
                         <h2 style="margin-bottom: 2px;">Account Details</h2>
@@ -153,7 +153,7 @@
             <section class="glass-card reveal reveal-delay-1">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
                     <div class="stat-icon blue" style="animation: none;">
-                        <i class="fa fa-heart-pulse"></i>
+                        <i class="fa-solid fa-heart-pulse"></i>
                     </div>
                     <div>
                         <h2 style="margin-bottom: 2px;">Latest Health Snapshot</h2>
@@ -163,41 +163,41 @@
                 <div id="profile-health-details" style="display: grid; gap: 16px;">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-brain"
+                        <span style="color: var(--text-secondary);"><i class="fa-solid fa-brain"
                                 style="color: var(--teal); width: 20px;"></i> Stress Level</span>
                         <strong id="prof-stress">—</strong>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-chart-line"
+                        <span style="color: var(--text-secondary);"><i class="fa-solid fa-chart-line"
                                 style="color: var(--blue); width: 20px;"></i> Productivity</span>
                         <strong id="prof-productivity">—</strong>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-bed"
+                        <span style="color: var(--text-secondary);"><i class="fa-solid fa-bed"
                                 style="color: var(--purple); width: 20px;"></i> Sleep</span>
                         <strong id="prof-sleep">—</strong>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-shoe-prints"
+                        <span style="color: var(--text-secondary);"><i class="fa-solid fa-shoe-prints"
                                 style="color: var(--amber); width: 20px;"></i> Steps</span>
                         <strong id="prof-steps">—</strong>
                     </div>
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; padding: 14px; border-radius: var(--radius-sm); background: var(--bg-primary);">
-                        <span style="color: var(--text-secondary);"><i class="fa fa-display"
+                        <span style="color: var(--text-secondary);"><i class="fa-solid fa-display"
                                 style="color: var(--rose); width: 20px;"></i> Screen Time</span>
                         <strong id="prof-screen">—</strong>
                     </div>
                 </div>
                 <div style="margin-top: 20px; display: flex; gap: 12px;">
                     <a href="/dashboard" class="btn btn-primary btn-sm" style="flex: 1;">
-                        <i class="fa fa-grid-2"></i> Go to Dashboard
+                        <i class="fa-solid fa-grid-2"></i> Go to Dashboard
                     </a>
                     <a href="/hospitals" class="btn btn-outline btn-sm" style="flex: 1;">
-                        <i class="fa fa-hospital"></i> Find Hospitals
+                        <i class="fa-solid fa-hospital"></i> Find Hospitals
                     </a>
                 </div>
             </section>
@@ -206,7 +206,7 @@
             <section class="glass-card reveal reveal-delay-2">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 28px;">
                     <div class="stat-icon purple" style="animation: none;">
-                        <i class="fa fa-bolt"></i>
+                        <i class="fa-solid fa-bolt"></i>
                     </div>
                     <div>
                         <h2 style="margin-bottom: 2px;">Quick Actions</h2>
@@ -216,27 +216,27 @@
                 <div style="display: grid; gap: 12px;">
                     <a href="/hospitals" class="btn btn-outline"
                         style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest
+                        <i class="fa-solid fa-location-crosshairs" style="color: var(--teal); width: 20px;"></i> Find Nearest
                         Hospital
                     </a>
                     <a href="/emergency" class="btn btn-outline"
                         style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS
+                        <i class="fa-solid fa-phone-volume" style="color: var(--rose); width: 20px;"></i> Emergency SOS
                         Request
                     </a>
                     <a href="/dashboard" class="btn btn-outline"
                         style="width: 100%; justify-content: flex-start; gap: 12px;"
                         onclick="toggleModal('healthModal', true); return false;">
-                        <i class="fa fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health
+                        <i class="fa-solid fa-heart-circle-plus" style="color: var(--blue); width: 20px;"></i> Log New Health
                         Entry
                     </a>
                     <a href="/about" class="btn btn-outline"
                         style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-circle-info" style="color: var(--purple); width: 20px;"></i> About Arogya Map
+                        <i class="fa-solid fa-circle-info" style="color: var(--purple); width: 20px;"></i> About Arogya Map
                     </a>
                     <a href="/contact" class="btn btn-outline"
                         style="width: 100%; justify-content: flex-start; gap: 12px;">
-                        <i class="fa fa-envelope" style="color: var(--amber); width: 20px;"></i> Contact Support
+                        <i class="fa-solid fa-envelope" style="color: var(--amber); width: 20px;"></i> Contact Support
                     </a>
                 </div>
             </section>

@@ -19,27 +19,27 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="/dashboard" class="sidebar-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
-            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa fa-times"></i></button>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Main</div>
-            <a href="/dashboard" class="active"><i class="fa fa-grid-2"></i> Dashboard</a>
-            <a href="/hospitals"><i class="fa fa-hospital"></i> Find Hospital</a>
-            <a href="/emergency" class="emergency-link"><i class="fa fa-phone-volume"></i> Emergency SOS</a>
+            <a href="/dashboard" class="active"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+            <a href="/hospitals"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
+            <a href="/emergency" class="emergency-link"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">Health</div>
             <a href="#" onclick="toggleModal('healthModal', true); return false;"><i
-                    class="fa fa-heart-circle-plus"></i> Log Health Data</a>
+                    class="fa-solid fa-heart-circle-plus"></i> Log Health Data</a>
             <a href="#" onclick="toggleModal('stressModal', true); return false;"><i
-                    class="fa fa-wand-magic-sparkles"></i> AI Wellness Tips</a>
+                    class="fa-solid fa-wand-magic-sparkles"></i> AI Wellness Tips</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
-            <a href="/about"><i class="fa fa-circle-info"></i> About Us</a>
-            <a href="/contact"><i class="fa fa-envelope"></i> Contact</a>
-            <a href="/profile"><i class="fa fa-user"></i> Profile</a>
+            <a href="/about"><i class="fa-solid fa-circle-info"></i> About Us</a>
+            <a href="/contact"><i class="fa-solid fa-envelope"></i> Contact</a>
+            <a href="/profile"><i class="fa-solid fa-user"></i> Profile</a>
         </nav>
         <div class="sidebar-footer">
             <div class="sidebar-user">
@@ -56,7 +56,7 @@
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
                     style="color: var(--rose);">
-                    <i class="fa fa-right-from-bracket"></i> Logout
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </button>
             </div>
         </div>
@@ -67,10 +67,10 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars"></i>
             </button>
             <a href="/dashboard" class="nav-logo">
-                <i class="fa fa-heart-pulse"></i>
+                <i class="fa-solid fa-heart-pulse"></i>
                 <span>Arogya Map</span>
             </a>
             <div style="width: 40px;"></div>
@@ -86,10 +86,10 @@
                 health insights.</p>
             <div class="hero-actions">
                 <a href="/hospitals" class="btn btn-primary" id="find-hospital-btn">
-                    <i class="fa fa-hospital"></i> Find Nearest Hospital
+                    <i class="fa-solid fa-hospital"></i> Find Nearest Hospital
                 </a>
                 <a href="/emergency" class="btn btn-emergency" id="sos-btn">
-                    <i class="fa fa-phone-volume"></i> EMERGENCY SOS
+                    <i class="fa-solid fa-phone-volume"></i> EMERGENCY SOS
                 </a>
             </div>
         </div>
@@ -102,20 +102,20 @@
         <section class="stats-grid">
             <div class="glass-card stat-card reveal" onclick="toggleModal('stressModal', true)">
                 <div class="stat-header">
-                    <div class="stat-icon teal"><i class="fa fa-brain"></i></div>
-                    <div class="stat-trend up"><i class="fa fa-arrow-down"></i> Improving</div>
+                    <div class="stat-icon teal"><i class="fa-solid fa-brain"></i></div>
+                    <div class="stat-trend up"><i class="fa-solid fa-arrow-down"></i> Improving</div>
                 </div>
                 <div class="stat-label">Stress Level</div>
                 <div class="stat-value" id="stress-val">0%</div>
                 <div style="font-size: 0.8rem; color: var(--teal); cursor: pointer;">
-                    <i class="fa fa-wand-magic-sparkles"></i> Click for AI tips
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Click for AI tips
                 </div>
             </div>
 
             <div class="glass-card stat-card reveal reveal-delay-1">
                 <div class="stat-header">
-                    <div class="stat-icon blue"><i class="fa fa-chart-line"></i></div>
-                    <div class="stat-trend up" id="prod-trend"><i class="fa fa-arrow-up"></i> Trending up</div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="stat-trend up" id="prod-trend"><i class="fa-solid fa-arrow-up"></i> Trending up</div>
                 </div>
                 <div class="stat-label">Productivity</div>
                 <div class="stat-value" id="prod-val">0%</div>
@@ -124,8 +124,8 @@
 
             <div class="glass-card stat-card reveal reveal-delay-2">
                 <div class="stat-header">
-                    <div class="stat-icon purple"><i class="fa fa-bed"></i></div>
-                    <div class="stat-trend" id="sleep-trend"><i class="fa fa-minus"></i> Average</div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-bed"></i></div>
+                    <div class="stat-trend" id="sleep-trend"><i class="fa-solid fa-minus"></i> Average</div>
                 </div>
                 <div class="stat-label">Sleep Duration</div>
                 <div class="stat-value" id="sleep-val">0 hrs</div>
@@ -134,8 +134,8 @@
 
             <div class="glass-card stat-card reveal reveal-delay-3">
                 <div class="stat-header">
-                    <div class="stat-icon amber"><i class="fa fa-shoe-prints"></i></div>
-                    <div class="stat-trend up" id="steps-trend"><i class="fa fa-arrow-up"></i> Active</div>
+                    <div class="stat-icon amber"><i class="fa-solid fa-shoe-prints"></i></div>
+                    <div class="stat-trend up" id="steps-trend"><i class="fa-solid fa-arrow-up"></i> Active</div>
                 </div>
                 <div class="stat-label">Steps Today</div>
                 <div class="stat-value" id="steps-val">0</div>
@@ -155,7 +155,7 @@
             <section class="glass-card reveal">
                 <h3
                     style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span><i class="fa fa-bed" style="color: var(--purple);"></i> Sleep Trend</span>
+                    <span><i class="fa-solid fa-bed" style="color: var(--purple);"></i> Sleep Trend</span>
                     <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">Last 7 Days</span>
                 </h3>
                 <div style="height: 200px; display: flex; align-items: center; justify-content: center;">
@@ -167,7 +167,7 @@
             <section class="glass-card reveal reveal-delay-1">
                 <h3
                     style="margin-bottom: 12px; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span><i class="fa fa-shoe-prints" style="color: var(--amber);"></i> Steps Activity</span>
+                    <span><i class="fa-solid fa-shoe-prints" style="color: var(--amber);"></i> Steps Activity</span>
                     <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);">Last 7 Days</span>
                 </h3>
                 <div style="height: 200px; display: flex; align-items: center; justify-content: center;">
@@ -179,7 +179,7 @@
             <section class="glass-card reveal reveal-delay-2"
                 style="display: flex; flex-direction: column; justify-content: space-between;">
                 <h3 style="margin-bottom: 12px; font-size: 1.1rem;">
-                    <i class="fa fa-heart-pulse" style="color: var(--teal);"></i> AI Wellness Score
+                    <i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> AI Wellness Score
                 </h3>
                 <div
                     style="text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
@@ -195,10 +195,10 @@
                 <div style="margin-top: 16px; display: flex; gap: 8px;">
                     <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="toggleModal('healthModal', true)"
                         id="log-entry-btn">
-                        <i class="fa fa-plus-circle"></i> Log
+                        <i class="fa-solid fa-plus-circle"></i> Log
                     </button>
                     <a href="/contact" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">
-                        <i class="fa fa-message"></i> Advice
+                        <i class="fa-solid fa-message"></i> Advice
                     </a>
                 </div>
             </section>
@@ -212,7 +212,7 @@
         <div class="container">
             <div class="footer-grid">
                 <div>
-                    <h3><i class="fa fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
+                    <h3><i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
                     <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
                         analytics for emergency response.</p>
                     <div class="social-links" style="margin-top: 20px;">
@@ -256,20 +256,20 @@
     <div id="stressModal" class="modal-overlay">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fa fa-wand-magic-sparkles" style="color: var(--teal);"></i> Wellness Insights</h2>
+                <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--teal);"></i> Wellness Insights</h2>
                 <button class="btn btn-ghost" onclick="toggleModal('stressModal', false)">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <div id="stress-tips">
                 <p>Based on your current stress level, our AI recommends:</p>
                 <ul style="margin-top: 16px; display: grid; gap: 12px;" id="stress-tip-list">
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> 10-minute mindful breathing</li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Reducing screen time by 1 hour
+                    <li><i class="fa-solid fa-check-circle" style="color: var(--teal);"></i> 10-minute mindful breathing</li>
+                    <li><i class="fa-solid fa-check-circle" style="color: var(--teal);"></i> Reducing screen time by 1 hour
                     </li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Prioritizing 8 hours of sleep
+                    <li><i class="fa-solid fa-check-circle" style="color: var(--teal);"></i> Prioritizing 8 hours of sleep
                         tonight</li>
-                    <li><i class="fa fa-check-circle" style="color: var(--teal);"></i> Take a 15-minute walk outside
+                    <li><i class="fa-solid fa-check-circle" style="color: var(--teal);"></i> Take a 15-minute walk outside
                     </li>
                 </ul>
             </div>
@@ -282,9 +282,9 @@
     <div id="healthModal" class="modal-overlay">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fa fa-heart-circle-plus" style="color: var(--teal);"></i> Add Health Entry</h2>
+                <h2><i class="fa-solid fa-heart-circle-plus" style="color: var(--teal);"></i> Add Health Entry</h2>
                 <button class="btn btn-ghost" onclick="toggleModal('healthModal', false)">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <form id="health-entry-form" onsubmit="handleHealthEntry(event)">
@@ -310,7 +310,7 @@
                         required>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                    <i class="fa fa-check"></i> SAVE DATA
+                    <i class="fa-solid fa-check"></i> SAVE DATA
                 </button>
             </form>
             <button class="btn btn-outline" style="width: 100%; margin-top: 10px;"
@@ -322,9 +322,9 @@
     <div id="bedModal" class="modal-overlay">
         <div class="modal-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fa fa-bed" style="color: var(--teal);"></i> Request Bed</h2>
+                <h2><i class="fa-solid fa-bed" style="color: var(--teal);"></i> Request Bed</h2>
                 <button class="btn btn-ghost" onclick="toggleModal('bedModal', false)">
-                    <i class="fa fa-times"></i>
+                    <i class="fa-solid fa-times"></i>
                 </button>
             </div>
             <p style="margin-bottom: 16px; color: var(--text-secondary);">Hospital: <strong
@@ -343,7 +343,7 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
-                    <i class="fa fa-check-circle"></i> CONFIRM BOOKING
+                    <i class="fa-solid fa-check-circle"></i> CONFIRM BOOKING
                 </button>
             </form>
             <button class="btn btn-outline" style="width: 100%; margin-top: 10px;"
@@ -357,14 +357,14 @@
             <div style="margin-bottom: 20px;">
                 <div class="stat-icon teal"
                     style="width: 70px; height: 70px; font-size: 2rem; margin: 0 auto 16px auto;">
-                    <i class="fa fa-check-circle"></i>
+                    <i class="fa-solid fa-check-circle"></i>
                 </div>
                 <h2>Hospital Assigned!</h2>
             </div>
             <div id="emergency-result-content" style="text-align: left;"></div>
             <button class="btn btn-primary" style="width: 100%; margin-top: 24px;"
                 onclick="toggleModal('emergencyResultModal', false)">
-                <i class="fa fa-check"></i> OK
+                <i class="fa-solid fa-check"></i> OK
             </button>
         </div>
     </div>
