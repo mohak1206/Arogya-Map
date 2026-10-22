@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS hospitals (
     ventilators INT NOT NULL DEFAULT 0,
     available_ventilators INT NOT NULL DEFAULT 0,
     contact VARCHAR(20),
-    speciality VARCHAR(100) DEFAULT 'General'
+    speciality VARCHAR(100) DEFAULT 'General',
+    INDEX idx_hospitals_lat_lng (latitude, longitude)
 );
 
 -- ============================================================

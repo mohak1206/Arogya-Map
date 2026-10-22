@@ -63,6 +63,7 @@ def admin_reports():
 # Note: we will need `mysql` instance. We can import it from `app` or pass it in.
 # To avoid circular imports, we'll import `mysql` inside the functions, or at the top.
 from database import mysql
+from broadcaster import broadcaster
 
 @admin_api_bp.route('/dashboard-stats', methods=['GET'])
 @admin_api_required
@@ -174,6 +175,20 @@ def edit_hospital(h_id):
         ))
         mysql.connection.commit()
         cur.close()
+
+        # Broadcast live bed update to connected user maps
+        try:
+            broadcaster.broadcast({
+                'event': 'bed_update',
+                'hospital_id': h_id,
+                'total_beds': int(data.get('total_beds', 0)),
+                'available_beds': int(data.get('available_beds', 0)),
+                'available_icu': int(data.get('available_icu', 0)),
+                'available_ventilators': int(data.get('available_ventilators', 0))
+            })
+        except Exception as b_err:
+            print(f"Broadcast error: {b_err}")
+
         return jsonify({'message': 'Hospital updated successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -242,10 +257,51 @@ def assign_patient_hospital(p_id):
 @admin_api_required
 def update_patient_status(p_id):
     status = request.json.get('status')
+    if not status:
+        return jsonify({'error': 'Status is required'}), 400
     try:
         cur = mysql.connection.cursor()
-        cur.execute('UPDATE emergency_requests SET status=%s WHERE id=%s', (status, p_id))
-        mysql.connection.commit()
+        mysql.connection.begin()
+        try:
+            # Lock the emergency request row to check previous state
+            cur.execute('SELECT hospital_id, status FROM emergency_requests WHERE id=%s FOR UPDATE', (p_id,))
+            req_row = cur.fetchone()
+            if not req_row:
+                mysql.connection.rollback()
+                cur.close()
+                return jsonify({'error': 'Emergency request not found'}), 404
+
+            prev_status = req_row.get('status')
+            hosp_id = req_row.get('hospital_id')
+
+            # If moving to completed (or cancelled) from assigned, restore bed count
+            if status in ('completed', 'cancelled') and prev_status == 'assigned' and hosp_id:
+                cur.execute(
+                    'UPDATE hospitals SET available_beds = LEAST(total_beds, available_beds + 1) WHERE id = %s',
+                    (hosp_id,)
+                )
+                cur.execute('SELECT available_beds, total_beds, available_icu, available_ventilators FROM hospitals WHERE id = %s', (hosp_id,))
+                restored_h = cur.fetchone()
+                if restored_h:
+                    try:
+                        broadcaster.broadcast({
+                            'event': 'bed_update',
+                            'hospital_id': hosp_id,
+                            'available_beds': restored_h['available_beds'],
+                            'total_beds': restored_h['total_beds'],
+                            'available_icu': restored_h['available_icu'],
+                            'available_ventilators': restored_h['available_ventilators']
+                        })
+                    except Exception as b_err:
+                        print(f"Broadcast error on bed restore: {b_err}")
+
+            cur.execute('UPDATE emergency_requests SET status=%s WHERE id=%s', (status, p_id))
+            mysql.connection.commit()
+        except Exception as tx_err:
+            mysql.connection.rollback()
+            cur.close()
+            return jsonify({'error': f'Transaction failed: {str(tx_err)}'}), 500
+
         cur.close()
         return jsonify({'message': 'Status updated successfully'})
     except Exception as e:

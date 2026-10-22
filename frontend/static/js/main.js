@@ -5,8 +5,22 @@
 
 const API_BASE = '/api';
 let hospitalMap = null;
-let hospitalMarkers = [];
+let markerLayerGroup = null;
+let userMarker = null;
+let userRadiusCircle = null;
+let userLocationWatcherId = null;
+let pollingIntervalId = null;
+let currentUserLat = null;
+let currentUserLng = null;
+let lastFetchedLat = null;
+let lastFetchedLng = null;
+let currentSearchRadius = 10; // km
+let currentFacilityFilter = 'all'; // 'all' | 'hospital' | 'clinic' | 'icu' | 'open_beds'
+let allFetchedFacilities = [];
+let markerMapById = new Map();
+let initialFitDone = false;
 let searchTimeout = null;
+let sseEventSource = null;
 
 // ═══════════════════════════════════════════════════════════
 // THEME MANAGEMENT
@@ -374,7 +388,21 @@ function renderCharts(rows) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// HOSPITAL LOADING & RENDERING
+// DISTANCE HELPER
+// ═══════════════════════════════════════════════════════════
+function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// ═══════════════════════════════════════════════════════════
+// HOSPITAL LOADING & RENDERING (Dashboard compatibility)
 // ═══════════════════════════════════════════════════════════
 async function loadHospitals(lat = null, lng = null) {
   let endpoint = '/hospitals';
@@ -383,7 +411,6 @@ async function loadHospitals(lat = null, lng = null) {
   try {
     const data = await apiFetch(endpoint);
     renderHospitals(data.hospitals);
-    updateMapMarkers(data.hospitals, lat, lng);
     const countEl = document.getElementById('hospitals-count');
     if (countEl) countEl.innerText = `${data.hospitals.length} Hospitals Found`;
   } catch (err) {}
@@ -394,7 +421,7 @@ function renderHospitals(hospitals) {
   if (!container) return;
   container.innerHTML = '';
 
-  if (hospitals.length === 0) {
+  if (!hospitals || hospitals.length === 0) {
     container.innerHTML = `
       <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 48px;">
         <i class="fa fa-hospital" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 16px;"></i>
@@ -410,10 +437,10 @@ function renderHospitals(hospitals) {
     card.className = 'glass-card hospital-card reveal';
     card.style.animationDelay = `${index * 0.05}s`;
 
-    const isAvailable = h.available_beds > 0;
+    const isAvailable = (h.available_beds || 0) > 0;
     const badgeClass = isAvailable ? 'badge-available' : 'badge-full';
     const badgeText = isAvailable ? 'AVAILABLE' : 'FULL';
-    const distText = h.distance_km != null ? `${h.distance_km} km away` : h.location;
+    const distText = h.distance_km != null ? `${h.distance_km} km away` : (h.location || '');
     const occupancy = h.total_beds > 0 ? Math.round(((h.total_beds - h.available_beds) / h.total_beds) * 100) : 0;
 
     card.innerHTML = `
@@ -422,21 +449,21 @@ function renderHospitals(hospitals) {
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="hospital-location">
-        <i class="fa fa-location-dot"></i>
+        <i class="fa-solid fa-location-dot"></i>
         <span>${distText}</span>
         ${h.speciality ? `<span class="badge badge-speciality" style="margin-left: 8px;">${h.speciality}</span>` : ''}
       </div>
       <div class="hospital-stats">
         <div class="hospital-stat">
-          <div class="stat-num" style="color: ${isAvailable ? 'var(--emerald)' : 'var(--rose)'};">${h.available_beds}</div>
+          <div class="stat-num" style="color: ${isAvailable ? 'var(--emerald)' : 'var(--rose)'};">${h.available_beds || 0}</div>
           <div class="stat-lbl">Beds</div>
         </div>
         <div class="hospital-stat">
-          <div class="stat-num" style="color: var(--blue);">${h.available_icu}</div>
+          <div class="stat-num" style="color: var(--blue);">${h.available_icu || 0}</div>
           <div class="stat-lbl">ICU</div>
         </div>
         <div class="hospital-stat">
-          <div class="stat-num" style="color: var(--purple);">${h.available_ventilators}</div>
+          <div class="stat-num" style="color: var(--purple);">${h.available_ventilators || 0}</div>
           <div class="stat-lbl">Ventilators</div>
         </div>
       </div>
@@ -454,7 +481,7 @@ function renderHospitals(hospitals) {
         <button class="btn btn-primary btn-sm" onclick="openBedModal(${h.id}, '${h.name.replace(/'/g, "\\'")}')" ${!isAvailable ? 'disabled' : ''}>
           <i class="fa fa-bed"></i> Book Bed
         </button>
-        <button class="btn btn-outline btn-sm" onclick="getDirections(${h.latitude}, ${h.longitude}, '${h.name.replace(/'/g, "\\'")}')">
+        <button class="btn btn-outline btn-sm" onclick="getDirections(${h.latitude || h.lat}, ${h.longitude || h.lng}, '${h.name.replace(/'/g, "\\'")}')">
           <i class="fa fa-diamond-turn-right"></i> Directions
         </button>
       </div>
@@ -462,58 +489,572 @@ function renderHospitals(hospitals) {
     container.appendChild(card);
   });
 
-  // Trigger reveal animations
   setTimeout(() => initScrollReveal(), 100);
 }
 
 // ═══════════════════════════════════════════════════════════
-// HOSPITAL SEARCH
+// REAL-TIME LOCATION & NEAREST FACILITIES (PHASE 1 & 2)
 // ═══════════════════════════════════════════════════════════
-function debounceSearch(query) {
-  clearTimeout(searchTimeout);
-  searchTimeout = setTimeout(() => {
-    if (query.trim().length === 0) {
-      loadHospitals();
-    } else {
-      searchHospitalsByQuery(query);
-    }
-  }, 400);
-}
 
-function searchHospitals() {
-  const input = document.getElementById('hospital-search');
-  if (input && input.value.trim()) {
-    searchHospitalsByQuery(input.value.trim());
-  } else {
-    loadHospitals();
+async function fetchNearestFacilities(showSkeleton = true) {
+  if (currentUserLat === null || currentUserLng === null) return;
+
+  const container = document.getElementById('hospital-list');
+  if (showSkeleton && container) {
+    container.innerHTML = `
+      <div class="glass-card skeleton skeleton-card"></div>
+      <div class="glass-card skeleton skeleton-card"></div>
+      <div class="glass-card skeleton skeleton-card"></div>
+    `;
+  }
+
+  const url = `${API_BASE}/hospitals/nearest?lat=${currentUserLat}&lng=${currentUserLng}&radius=${currentSearchRadius}&include_osm=true`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Server returned ${res.status}`);
+    }
+    const data = await res.json();
+    lastFetchedLat = currentUserLat;
+    lastFetchedLng = currentUserLng;
+    allFetchedFacilities = data.hospitals || [];
+
+    if (data.warnings && data.warnings.length > 0) {
+      console.warn('API Warnings:', data.warnings);
+    }
+
+    applyFilterAndRender();
+  } catch (err) {
+    console.error('Failed to load nearest facilities:', err);
+    if (container) {
+      container.innerHTML = `
+        <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+          <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: var(--rose); margin-bottom: 12px;"></i>
+          <h3>Unable to fetch healthcare facilities</h3>
+          <p style="color: var(--text-muted); margin-top: 6px;">${err.message || 'Please check your connection and try again.'}</p>
+          <button class="btn btn-primary btn-sm" style="margin-top: 16px;" onclick="fetchNearestFacilities(true)">
+            <i class="fa-solid fa-rotate-right"></i> Retry
+          </button>
+        </div>
+      `;
+    }
+    showToast('Failed to load facilities: ' + err.message, 'error');
   }
 }
 
-async function searchHospitalsByQuery(query) {
-  try {
-    const data = await apiFetch(`/hospitals/search?q=${encodeURIComponent(query)}`);
-    renderHospitals(data.hospitals);
-    updateMapMarkers(data.hospitals);
-    const countEl = document.getElementById('hospitals-count');
-    if (countEl) countEl.innerText = `${data.hospitals.length} Hospitals Found`;
-  } catch (err) {}
+function updateChipCounts() {
+  const totalCount = allFetchedFacilities.length;
+  const hospitalCount = allFetchedFacilities.filter(f => f.type === 'hospital').length;
+  const clinicCount = allFetchedFacilities.filter(f => f.type === 'clinic').length;
+  const icuCount = allFetchedFacilities.filter(f => (f.available_icu || 0) > 0).length;
+  const openBedsCount = allFetchedFacilities.filter(f => (f.available_beds || 0) > 0).length;
+
+  const cAll = document.getElementById('count-all');
+  const cHosp = document.getElementById('count-hospital');
+  const cClinic = document.getElementById('count-clinic');
+  const cIcu = document.getElementById('count-icu');
+  const cOpen = document.getElementById('count-open-beds');
+
+  if (cAll) cAll.innerText = totalCount;
+  if (cHosp) cHosp.innerText = hospitalCount;
+  if (cClinic) cClinic.innerText = clinicCount;
+  if (cIcu) cIcu.innerText = icuCount;
+  if (cOpen) cOpen.innerText = openBedsCount;
+}
+
+function applyFilterAndRender() {
+  const container = document.getElementById('hospital-list');
+  const countEl = document.getElementById('hospitals-count');
+  const searchInput = document.getElementById('hospital-search');
+  const searchQuery = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+  updateChipCounts();
+
+  let filtered = allFetchedFacilities.filter(item => {
+    // Filter chip check
+    if (currentFacilityFilter === 'hospital' && item.type !== 'hospital') return false;
+    if (currentFacilityFilter === 'clinic' && item.type !== 'clinic') return false;
+    if (currentFacilityFilter === 'icu' && (item.available_icu || 0) <= 0) return false;
+    if (currentFacilityFilter === 'open_beds' && (item.available_beds || 0) <= 0) return false;
+
+    // Search query check
+    if (searchQuery) {
+      const matchName = (item.name || '').toLowerCase().includes(searchQuery);
+      const matchLocation = (item.location || item.address || '').toLowerCase().includes(searchQuery);
+      const matchSpeciality = (item.speciality || '').toLowerCase().includes(searchQuery);
+      if (!matchName && !matchLocation && !matchSpeciality) return false;
+    }
+
+    return true;
+  });
+
+  if (countEl) {
+    countEl.innerText = `${filtered.length} Facilities Found`;
+  }
+
+  // Sync map markers
+  updateLayerMarkers(filtered);
+
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 48px;">
+        <i class="fa-solid fa-hospital-user" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 16px;"></i>
+        <h3 style="color: var(--text-primary);">No facilities found within ${currentSearchRadius} km</h3>
+        <p style="color: var(--text-muted); margin-top: 8px; max-width: 500px; margin-left: auto; margin-right: auto;">
+          Try expanding your search radius to 20 km or switching the filter chips above.
+        </p>
+        <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px;">
+          <button class="btn btn-outline btn-sm" onclick="setSearchRadius(20)">
+            <i class="fa-solid fa-arrows-spin"></i> Expand to 20 km
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="setFacilityFilter('all')">
+            <i class="fa-solid fa-filter-circle-xmark"></i> Reset Filter
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  filtered.forEach((h, index) => {
+    const card = document.createElement('div');
+    card.className = 'glass-card hospital-card reveal';
+    card.id = `card-${h.id}`;
+    card.style.animationDelay = `${Math.min(index * 0.04, 0.4)}s`;
+    card.onclick = () => selectFacility(h.id, h.lat, h.lng);
+
+    const isPartner = h.source === 'db' || h.live === true;
+    const isAvailable = (h.available_beds || 0) > 0;
+    const isClinic = h.type === 'clinic';
+
+    let badgeClass = 'badge-osm';
+    let badgeText = 'CAPACITY UNKNOWN, CALL FIRST';
+
+    if (isPartner) {
+      badgeClass = isAvailable ? 'badge-available' : 'badge-full';
+      badgeText = isAvailable ? 'LIVE BEDS AVAILABLE' : 'BEDS FULL';
+    } else if (isClinic) {
+      badgeClass = 'badge-clinic';
+      badgeText = 'CLINIC · CALL FIRST';
+    }
+
+    const distText = h.distance_km != null ? `${h.distance_km} km away` : (h.location || 'Nearby');
+    const occupancy = h.total_beds > 0 ? Math.round(((h.total_beds - h.available_beds) / h.total_beds) * 100) : 0;
+
+    card.innerHTML = `
+      <div class="hospital-header">
+        <div style="flex: 1; padding-right: 8px;">
+          <h3>${h.name}</h3>
+          <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+            <span class="badge ${badgeClass}">${badgeText}</span>
+            <span class="badge badge-distance"><i class="fa-solid fa-location-dot"></i> ${distText}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hospital-location">
+        <i class="fa-solid ${isClinic ? 'fa-clinic-medical' : 'fa-hospital'}" style="color: ${isClinic ? 'var(--blue)' : 'var(--teal)'};"></i>
+        <span>${h.location || h.address || (isClinic ? 'Clinic / Doctor Practice' : 'Hospital Facility')}</span>
+        ${h.speciality ? `<span class="badge badge-speciality" style="margin-left: 8px;">${h.speciality}</span>` : ''}
+      </div>
+
+      ${isPartner ? `
+        <div class="hospital-stats">
+          <div class="hospital-stat">
+            <div class="stat-num" style="color: ${isAvailable ? 'var(--emerald)' : 'var(--rose)'};">${h.available_beds || 0}</div>
+            <div class="stat-lbl">Available Beds</div>
+          </div>
+          <div class="hospital-stat">
+            <div class="stat-num" style="color: var(--blue);">${h.available_icu || 0}</div>
+            <div class="stat-lbl">ICU Beds</div>
+          </div>
+          <div class="hospital-stat">
+            <div class="stat-num" style="color: var(--purple);">${h.available_ventilators || 0}</div>
+            <div class="stat-lbl">Ventilators</div>
+          </div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+            <span style="color: var(--text-muted);">Capacity Occupancy</span>
+            <span style="font-weight: 600;">${occupancy}%</span>
+          </div>
+          <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
+            <div style="height: 100%; width: ${occupancy}%; background: ${occupancy > 80 ? 'var(--rose)' : occupancy > 50 ? 'var(--amber)' : 'var(--emerald)'}; border-radius: 3px; transition: width 0.5s ease;"></div>
+          </div>
+        </div>
+      ` : `
+        <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; font-size: 0.825rem; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
+          <i class="fa-solid fa-circle-info" style="color: var(--blue); font-size: 1.1rem;"></i>
+          <div>OpenStreetMap facility: live telemetry not linked. Please call before arrival.</div>
+        </div>
+      `}
+
+      ${h.phone ? `<div style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 12px;"><i class="fa-solid fa-phone" style="color: var(--teal);"></i> <a href="tel:${h.phone}" style="color: var(--text-primary); font-weight: 500;">${h.phone}</a></div>` : ''}
+
+      <div class="hospital-actions" onclick="event.stopPropagation();">
+        ${isPartner ? `
+          <button class="btn btn-primary btn-sm" onclick="openBedModal(${h.id}, '${h.name.replace(/'/g, "\\'")}')" ${!isAvailable ? 'disabled' : ''}>
+            <i class="fa-solid fa-bed"></i> Book Bed
+          </button>
+        ` : (h.phone ? `
+          <a class="btn btn-primary btn-sm" href="tel:${h.phone}">
+            <i class="fa-solid fa-phone"></i> Call Now
+          </a>
+        ` : '')}
+        <button class="btn btn-outline btn-sm" onclick="getDirections(${h.lat}, ${h.lng}, '${h.name.replace(/'/g, "\\'")}')">
+          <i class="fa-solid fa-diamond-turn-right"></i> Directions
+        </button>
+      </div>
+    `;
+
+    container.appendChild(card);
+  });
+
+  setTimeout(() => initScrollReveal(), 100);
+}
+
+function updateLayerMarkers(facilities) {
+  if (!markerLayerGroup || !hospitalMap) return;
+
+  markerLayerGroup.clearLayers();
+  markerMapById.clear();
+
+  facilities.forEach(item => {
+    if (!item.lat || !item.lng) return;
+
+    const isPartner = item.source === 'db' || item.live === true;
+    const isClinic = item.type === 'clinic';
+
+    let markerClass = 'marker-osm';
+    let iconClass = 'fa-solid fa-hospital';
+
+    if (isPartner) {
+      markerClass = 'marker-partner';
+      iconClass = 'fa-solid fa-hospital';
+    } else if (isClinic) {
+      markerClass = 'marker-clinic';
+      iconClass = 'fa-solid fa-clinic-medical';
+    }
+
+    const icon = L.divIcon({
+      html: `<div class="map-marker-pin ${markerClass}" id="pin-${item.id}"><i class="${iconClass}"></i></div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -20]
+    });
+
+    const isAvailable = (item.available_beds || 0) > 0;
+    const distText = item.distance_km != null ? `${item.distance_km} km away` : 'Nearby';
+
+    let bedBadgeHtml = '';
+    if (isPartner) {
+      bedBadgeHtml = `
+        <div style="background: rgba(0, 212, 170, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; border: 1px solid rgba(0, 212, 170, 0.25);">
+          <div>🛏️ Live Beds: <strong>${item.available_beds}/${item.total_beds}</strong> · ICU: <strong>${item.available_icu}</strong> · Vent: <strong>${item.available_ventilators}</strong></div>
+        </div>
+      `;
+    } else {
+      bedBadgeHtml = `
+        <div style="background: rgba(100, 116, 139, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; color: var(--text-secondary);">
+          <i class="fa-solid fa-circle-info"></i> Capacity unknown, call first
+        </div>
+      `;
+    }
+
+    const phoneHtml = item.phone
+      ? `<a href="tel:${item.phone}" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-phone"></i> Call</a>`
+      : '';
+
+    const bookBedHtml = (isPartner && isAvailable)
+      ? `<button class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="openBedModal(${item.id}, '${item.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-bed"></i> Book</button>`
+      : '';
+
+    const popupHtml = `
+      <div style="min-width: 220px; font-family: Inter, sans-serif; line-height: 1.4;">
+        <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
+          <strong style="font-size: 13.5px; color: var(--text-primary);">${item.name}</strong>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); margin: 3px 0;">
+          <i class="fa-solid fa-location-dot" style="color: var(--rose);"></i> ${distText}
+        </div>
+        ${bedBadgeHtml}
+        <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+          ${phoneHtml}
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px;">
+            <i class="fa-solid fa-diamond-turn-right"></i> Directions
+          </a>
+          ${bookBedHtml}
+        </div>
+      </div>
+    `;
+
+    const marker = L.marker([item.lat, item.lng], { icon })
+      .bindPopup(popupHtml);
+
+    marker.on('click', () => {
+      highlightCard(item.id);
+    });
+
+    markerMapById.set(item.id, marker);
+    markerLayerGroup.addLayer(marker);
+  });
+}
+
+function selectFacility(id, lat, lng) {
+  if (hospitalMap) {
+    hospitalMap.setView([lat, lng], Math.max(hospitalMap.getZoom(), 15), { animate: true });
+    const marker = markerMapById.get(id);
+    if (marker) {
+      marker.openPopup();
+    }
+  }
+  highlightCard(id);
+}
+
+function highlightCard(id) {
+  document.querySelectorAll('.hospital-card').forEach(c => c.classList.remove('active-selected'));
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.classList.add('active-selected');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
-// GEOLOCATION — USE MY LOCATION
+// REAL-TIME BED UPDATES VIA SSE (PHASE 3)
+// ═══════════════════════════════════════════════════════════
+function initRealtimeBedUpdates() {
+  if (typeof EventSource === 'undefined') return;
+
+  try {
+    if (sseEventSource) {
+      sseEventSource.close();
+    }
+    sseEventSource = new EventSource('/api/hospitals/stream');
+
+    sseEventSource.onmessage = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        if (payload.event === 'bed_update') {
+          handleLiveBedUpdate(payload);
+        }
+      } catch (err) {}
+    };
+
+    sseEventSource.onerror = () => {
+      // Disconnect gracefully; 30s background polling takes over
+      console.warn('SSE stream disconnected, fallback to 30s polling.');
+    };
+  } catch (err) {
+    console.warn('SSE initialization error:', err);
+  }
+}
+
+function handleLiveBedUpdate(data) {
+  const facility = allFetchedFacilities.find(f => f.id == data.hospital_id);
+  if (facility) {
+    if (data.available_beds !== undefined) facility.available_beds = Number(data.available_beds);
+    if (data.total_beds !== undefined) facility.total_beds = Number(data.total_beds);
+    if (data.available_icu !== undefined) facility.available_icu = Number(data.available_icu);
+    if (data.available_ventilators !== undefined) facility.available_ventilators = Number(data.available_ventilators);
+  }
+
+  // Update card in DOM
+  const card = document.getElementById(`card-${data.hospital_id}`);
+  if (card && facility) {
+    const isAvail = facility.available_beds > 0;
+    const badgeEl = card.querySelector('.badge-available, .badge-full');
+    if (badgeEl) {
+      badgeEl.className = `badge ${isAvail ? 'badge-available' : 'badge-full'}`;
+      badgeEl.innerText = isAvail ? 'LIVE BEDS AVAILABLE' : 'BEDS FULL';
+    }
+    const statNums = card.querySelectorAll('.stat-num');
+    if (statNums.length >= 3) {
+      statNums[0].innerText = facility.available_beds;
+      statNums[0].style.color = isAvail ? 'var(--emerald)' : 'var(--rose)';
+      statNums[1].innerText = facility.available_icu;
+      statNums[2].innerText = facility.available_ventilators;
+    }
+
+    // Micro-animation indicator on the card
+    card.style.transition = 'box-shadow 0.3s ease, border-color 0.3s ease';
+    card.style.borderColor = 'var(--teal)';
+    card.style.boxShadow = '0 0 15px var(--teal-glow)';
+    setTimeout(() => {
+      card.style.borderColor = '';
+      card.style.boxShadow = '';
+    }, 1200);
+  }
+
+  // Update popup
+  const marker = markerMapById.get(data.hospital_id);
+  if (marker && facility) {
+    const isAvailable = facility.available_beds > 0;
+    const distText = facility.distance_km != null ? `${facility.distance_km} km away` : 'Nearby';
+    const bedBadgeHtml = `
+      <div style="background: rgba(0, 212, 170, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; border: 1px solid rgba(0, 212, 170, 0.25);">
+        <div>🛏️ Live Beds: <strong>${facility.available_beds}/${facility.total_beds}</strong> · ICU: <strong>${facility.available_icu}</strong> · Vent: <strong>${facility.available_ventilators}</strong></div>
+      </div>
+    `;
+    const phoneHtml = facility.phone
+      ? `<a href="tel:${facility.phone}" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-phone"></i> Call</a>`
+      : '';
+    const bookBedHtml = isAvailable
+      ? `<button class="btn btn-primary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="openBedModal(${facility.id}, '${facility.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-bed"></i> Book</button>`
+      : '';
+
+    marker.setPopupContent(`
+      <div style="min-width: 220px; font-family: Inter, sans-serif; line-height: 1.4;">
+        <div style="display: flex; justify-content: space-between; align-items: start; gap: 8px;">
+          <strong style="font-size: 13.5px; color: var(--text-primary);">${facility.name}</strong>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); margin: 3px 0;">
+          <i class="fa-solid fa-location-dot" style="color: var(--rose);"></i> ${distText}
+        </div>
+        ${bedBadgeHtml}
+        <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+          ${phoneHtml}
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${facility.lat},${facility.lng}" target="_blank" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px;">
+            <i class="fa-solid fa-diamond-turn-right"></i> Directions
+          </a>
+          ${bookBedHtml}
+        </div>
+      </div>
+    `);
+  }
+
+  updateChipCounts();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CONTROLS: RADIUS & FILTERS
+// ═══════════════════════════════════════════════════════════
+
+function setSearchRadius(radiusKm) {
+  currentSearchRadius = Number(radiusKm);
+
+  document.querySelectorAll('.radius-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.innerText.includes(`${radiusKm} km`));
+  });
+
+  if (currentUserLat !== null && currentUserLng !== null) {
+    updateUserMarkerAndCircle(currentUserLat, currentUserLng);
+    if (userRadiusCircle && hospitalMap) {
+      hospitalMap.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25] });
+    }
+    fetchNearestFacilities(true);
+  }
+}
+
+function setFacilityFilter(filterName) {
+  currentFacilityFilter = filterName;
+
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.getAttribute('data-filter') === filterName);
+  });
+
+  applyFilterAndRender();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SEARCH & NOMINATIM GEOCODING FALLBACK
+// ═══════════════════════════════════════════════════════════
+
+function debounceSearch(query) {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    applyFilterAndRender();
+  }, 350);
+}
+
+function searchHospitals() {
+  handleManualSearch();
+}
+
+async function handleManualSearch() {
+  const input = document.getElementById('hospital-search');
+  if (!input || !input.value.trim()) {
+    applyFilterAndRender();
+    return;
+  }
+
+  const query = input.value.trim();
+  const searchBtn = document.getElementById('search-btn');
+  if (searchBtn) {
+    searchBtn.disabled = true;
+    searchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Searching...';
+  }
+
+  showToast(`Locating "${query}" via OpenStreetMap Nominatim...`, 'info');
+
+  try {
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+    const res = await fetch(nominatimUrl);
+    const results = await res.json();
+
+    if (!results || results.length === 0) {
+      // Local filter fallback
+      applyFilterAndRender();
+      showToast(`No coordinates found for "${query}". Filtered local list instead.`, 'info');
+      return;
+    }
+
+    const place = results[0];
+    const newLat = parseFloat(place.lat);
+    const newLng = parseFloat(place.lon);
+
+    currentUserLat = newLat;
+    currentUserLng = newLng;
+
+    const statusEl = document.getElementById('location-status');
+    const coordsEl = document.getElementById('location-coords');
+    const iconEl = document.getElementById('location-icon');
+
+    const placeLabel = place.display_name.split(',').slice(0, 3).join(',');
+    if (statusEl) statusEl.innerText = `📍 Location: ${placeLabel}`;
+    if (coordsEl) coordsEl.innerText = `Lat: ${newLat.toFixed(4)}, Lng: ${newLng.toFixed(4)} (Nominatim Geocoded)`;
+    if (iconEl) iconEl.className = 'stat-icon blue';
+
+    updateUserMarkerAndCircle(newLat, newLng);
+    if (userRadiusCircle && hospitalMap) {
+      hospitalMap.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25] });
+    }
+
+    await fetchNearestFacilities(true);
+    showToast(`Showing facilities near ${place.display_name.split(',')[0]}`, 'success');
+  } catch (err) {
+    console.error('Nominatim geocode error:', err);
+    showToast('Geocoding request failed. Filtered local facilities instead.', 'error');
+    applyFilterAndRender();
+  } finally {
+    if (searchBtn) {
+      searchBtn.disabled = false;
+      searchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Search';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// GEOLOCATION — DETECT MY LOCATION BUTTON
 // ═══════════════════════════════════════════════════════════
 function useMyLocation() {
   const btn = document.getElementById('location-btn');
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Detecting...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Detecting...';
   }
 
   if (!navigator.geolocation) {
     showToast('Geolocation is not supported by your browser', 'error');
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<i class="fa fa-location-crosshairs"></i> Use My Location';
+      btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Detect My Location';
     }
     return;
   }
@@ -522,34 +1063,43 @@ function useMyLocation() {
     (pos) => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy || 0);
 
-      showToast('Location detected! Finding nearest hospitals...', 'info');
-      loadHospitals(lat, lng);
+      currentUserLat = lat;
+      currentUserLng = lng;
 
-      // Update location display
+      showToast('Live location updated! Finding nearest facilities...', 'info');
+
       const statusEl = document.getElementById('location-status');
       const coordsEl = document.getElementById('location-coords');
-      if (statusEl) statusEl.innerText = '📍 Location Detected';
-      if (coordsEl) coordsEl.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+      const iconEl = document.getElementById('location-icon');
+      if (statusEl) statusEl.innerText = 'Live GPS Tracking Active';
+      if (coordsEl) coordsEl.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)} (±${acc}m)`;
+      if (iconEl) iconEl.className = 'stat-icon teal';
+
+      if (hospitalMap) {
+        updateUserMarkerAndCircle(lat, lng, acc);
+        if (userRadiusCircle) {
+          hospitalMap.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25] });
+        }
+      }
+      fetchNearestFacilities(true);
 
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa fa-location-crosshairs"></i> Update Location';
+        btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Update Location';
       }
     },
-    (error) => {
-      let msg = 'Unable to detect location.';
-      if (error.code === 1) msg = 'Location permission denied. Please allow location access.';
-      else if (error.code === 2) msg = 'Location unavailable. Please try again.';
-      else if (error.code === 3) msg = 'Location request timed out.';
+    (err) => {
+      let msg = 'Unable to detect location. Please allow browser location access or search above.';
+      if (err.code === 1) msg = 'Location permission denied. Please search your city or pincode.';
       showToast(msg, 'error');
-
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa fa-location-crosshairs"></i> Use My Location';
+        btn.innerHTML = '<i class="fa-solid fa-location-crosshairs"></i> Detect My Location';
       }
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
   );
 }
 
@@ -758,92 +1308,188 @@ function toggleMobileMenu() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// LEAFLET MAP
+// LEAFLET MAP INITIALIZATION & WATCHER
 // ═══════════════════════════════════════════════════════════
 function initHospitalMap() {
   const mapEl = document.getElementById('hospital-map');
   if (!mapEl || typeof L === 'undefined') return;
 
-  hospitalMap = L.map('hospital-map').setView([19.6967, 72.7670], 14); // Palghar center
+  cleanupGeolocationAndPolling();
+
+  // Create Leaflet map centered at default coordinates
+  hospitalMap = L.map('hospital-map', {
+    zoomControl: true,
+    scrollWheelZoom: true
+  }).setView([19.6967, 72.7670], 12);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 18
   }).addTo(hospitalMap);
 
-  // Load hospitals for the map
-  loadHospitals();
+  // Initialize marker layer group
+  markerLayerGroup = L.layerGroup().addTo(hospitalMap);
 
-  // Auto-detect location
-  setTimeout(() => useMyLocation(), 1000);
+  // Start real-time GPS tracking
+  startLocationWatcher();
+
+  // Start background 30s polling
+  startPolling();
+
+  // Start real-time bed update stream (SSE)
+  initRealtimeBedUpdates();
+
+  // Prevent memory leaks on page unload
+  window.addEventListener('beforeunload', cleanupGeolocationAndPolling);
+  window.addEventListener('pagehide', cleanupGeolocationAndPolling);
 }
 
-function updateMapMarkers(hospitals, userLat = null, userLng = null) {
+function startLocationWatcher() {
+  const statusEl = document.getElementById('location-status');
+  const coordsEl = document.getElementById('location-coords');
+  const iconEl = document.getElementById('location-icon');
+
+  if (!navigator.geolocation) {
+    if (statusEl) statusEl.innerText = 'Geolocation Not Supported';
+    if (coordsEl) coordsEl.innerText = 'Use search box to find facilities by city or pincode';
+    showToast('Geolocation is not supported by your browser', 'error');
+    fallbackToDefaultLocation(19.6967, 72.7670, 'Palghar (Default)');
+    return;
+  }
+
+  if (statusEl) statusEl.innerText = 'Acquiring GPS Signal...';
+  if (coordsEl) coordsEl.innerText = 'Please allow browser location access';
+
+  userLocationWatcherId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const accuracy = Math.round(pos.coords.accuracy || 0);
+
+      currentUserLat = lat;
+      currentUserLng = lng;
+
+      if (statusEl) statusEl.innerText = 'Live GPS Tracking Active';
+      if (coordsEl) coordsEl.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)} (±${accuracy}m)`;
+      if (iconEl) iconEl.className = 'stat-icon teal';
+
+      updateUserMarkerAndCircle(lat, lng, accuracy);
+
+      // Check distance moved since last fetch
+      let movedDistanceM = Infinity;
+      if (lastFetchedLat !== null && lastFetchedLng !== null) {
+        movedDistanceM = calculateHaversineDistance(lat, lng, lastFetchedLat, lastFetchedLng) * 1000;
+      }
+
+      // Fetch if moved more than 500m or first fix
+      if (lastFetchedLat === null || movedDistanceM > 500) {
+        fetchNearestFacilities(true);
+      }
+    },
+    (err) => {
+      console.warn('Geolocation error:', err.message);
+      let errMsg = 'Location access disabled.';
+      if (err.code === 1) {
+        errMsg = 'Location permission denied. Use search box below for city or pincode.';
+      } else if (err.code === 2) {
+        errMsg = 'Location unavailable. Use search box below.';
+      } else if (err.code === 3) {
+        errMsg = 'Location request timed out. Use search box below.';
+      }
+
+      if (statusEl) statusEl.innerText = 'Manual Location Mode';
+      if (coordsEl) coordsEl.innerText = errMsg;
+      if (iconEl) iconEl.className = 'stat-icon amber';
+
+      // Fall back to default location if initial fetch hasn't run
+      if (lastFetchedLat === null) {
+        fallbackToDefaultLocation(19.6967, 72.7670, 'Palghar (Default)');
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+}
+
+function updateUserMarkerAndCircle(lat, lng, accuracy = 0) {
   if (!hospitalMap) return;
 
-  // Clear existing markers
-  hospitalMarkers.forEach(m => hospitalMap.removeLayer(m));
-  hospitalMarkers = [];
-
-  // Custom hospital icon
-  const hospitalIcon = L.divIcon({
-    html: '<div style="background: var(--teal, #00d4aa); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; box-shadow: 0 2px 10px rgba(0,212,170,0.4); border: 2px solid white;"><i class="fa fa-hospital"></i></div>',
+  const userIcon = L.divIcon({
+    html: '<div class="map-marker-pin marker-user" title="You are here"><i class="fa-solid fa-person-circle-check"></i></div>',
     className: '',
     iconSize: [32, 32],
     iconAnchor: [16, 16],
-    popupAnchor: [0, -20]
+    popupAnchor: [0, -18]
   });
 
-  const userIcon = L.divIcon({
-    html: '<div style="background: #3b82f6; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; box-shadow: 0 2px 10px rgba(59,130,246,0.4); border: 3px solid white; animation: sos-pulse 2s infinite;"><i class="fa fa-user"></i></div>',
-    className: '',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -22]
-  });
-
-  // Add user marker
-  if (userLat && userLng) {
-    const userMarker = L.marker([userLat, userLng], { icon: userIcon })
-      .addTo(hospitalMap)
-      .bindPopup('<strong>📍 Your Location</strong>');
-    hospitalMarkers.push(userMarker);
+  if (!userMarker) {
+    userMarker = L.marker([lat, lng], { icon: userIcon, zIndexOffset: 1000 }).addTo(hospitalMap);
+    userMarker.bindPopup(`
+      <div style="font-family: Inter, sans-serif; text-align: center; padding: 4px;">
+        <strong style="font-size: 13px;"><i class="fa-solid fa-location-crosshairs" style="color: var(--teal);"></i> You Are Here</strong>
+        <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0 0;">GPS Accuracy: ±${accuracy}m</p>
+      </div>
+    `);
+  } else {
+    userMarker.setLatLng([lat, lng]);
   }
 
-  // Add hospital markers
-  const bounds = [];
-  hospitals.forEach(h => {
-    if (h.latitude && h.longitude) {
-      const isAvailable = h.available_beds > 0;
-      const marker = L.marker([h.latitude, h.longitude], { icon: hospitalIcon })
-        .addTo(hospitalMap)
-        .bindPopup(`
-          <div style="min-width: 200px; font-family: Inter, sans-serif;">
-            <strong style="font-size: 14px;">${h.name}</strong>
-            <p style="font-size: 12px; color: #666; margin: 4px 0;">${h.location}</p>
-            <div style="display: flex; gap: 8px; margin: 8px 0;">
-              <span style="background: ${isAvailable ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)'}; color: ${isAvailable ? '#10b981' : '#f43f5e'}; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;">${isAvailable ? 'AVAILABLE' : 'FULL'}</span>
-            </div>
-            <div style="font-size: 12px;">
-              <div>🛏️ Beds: <strong>${h.available_beds}</strong>/${h.total_beds}</div>
-              <div>🏥 ICU: <strong>${h.available_icu}</strong></div>
-              <div>💨 Ventilators: <strong>${h.available_ventilators}</strong></div>
-              ${h.distance_km != null ? `<div>📏 Distance: <strong>${h.distance_km} km</strong></div>` : ''}
-            </div>
-            ${h.contact ? `<div style="margin-top: 8px; font-size: 12px; font-weight: 600; color: #333;">📞 Contact: ${h.contact}</div>` : ''}
-            <button class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 6px; font-size: 12px;" onclick="openBedModal(${h.id}, '${h.name.replace(/'/g, "\\'")}')" ${!isAvailable ? 'disabled' : ''}>
-              <i class="fa fa-bed"></i> Book Bed
-            </button>
-          </div>
-        `);
-      hospitalMarkers.push(marker);
-      bounds.push([h.latitude, h.longitude]);
+  const radiusMeters = currentSearchRadius * 1000;
+  if (!userRadiusCircle) {
+    userRadiusCircle = L.circle([lat, lng], {
+      radius: radiusMeters,
+      color: '#00d4aa',
+      fillColor: '#00d4aa',
+      fillOpacity: 0.07,
+      weight: 1.5,
+      dashArray: '5, 5'
+    }).addTo(hospitalMap);
+  } else {
+    userRadiusCircle.setLatLng([lat, lng]);
+    userRadiusCircle.setRadius(radiusMeters);
+  }
+
+  if (!initialFitDone && userRadiusCircle) {
+    hospitalMap.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25] });
+    initialFitDone = true;
+  }
+}
+
+function fallbackToDefaultLocation(lat, lng, label) {
+  currentUserLat = lat;
+  currentUserLng = lng;
+
+  const statusEl = document.getElementById('location-status');
+  const coordsEl = document.getElementById('location-coords');
+  if (statusEl) statusEl.innerText = `Default Location (${label})`;
+  if (coordsEl) coordsEl.innerText = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)} · Use search box to change`;
+
+  updateUserMarkerAndCircle(lat, lng);
+  fetchNearestFacilities(true);
+}
+
+function startPolling() {
+  if (pollingIntervalId !== null) clearInterval(pollingIntervalId);
+  pollingIntervalId = setInterval(() => {
+    if (currentUserLat !== null && currentUserLng !== null) {
+      // Background poll: refresh bed telemetry without clearing list to skeleton
+      fetchNearestFacilities(false);
     }
-  });
+  }, 30000);
+}
 
-  if (userLat && userLng) bounds.push([userLat, userLng]);
-
-  // Removed fitBounds to ensure Palghar coordinate centering per user request
+function cleanupGeolocationAndPolling() {
+  if (userLocationWatcherId !== null) {
+    navigator.geolocation.clearWatch(userLocationWatcherId);
+    userLocationWatcherId = null;
+  }
+  if (pollingIntervalId !== null) {
+    clearInterval(pollingIntervalId);
+    pollingIntervalId = null;
+  }
+  if (sseEventSource) {
+    sseEventSource.close();
+    sseEventSource = null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════

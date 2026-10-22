@@ -102,8 +102,9 @@ Arogya-Map/
 | `/api/login` | POST | Authenticate and start session |
 | `/api/logout` | POST | End session |
 | `/api/user/profile` | GET | Full profile with health summary |
-| `/api/hospitals/nearest` | GET | Find nearest hospitals (Haversine) |
-| `/api/emergency` | POST | Submit emergency request |
+| `/api/hospitals/nearest` | GET | Real-time finder with bounding-box SQL Haversine & OpenStreetMap Overpass API (`?lat=&lng=&radius=&type=&include_osm=`) |
+| `/api/hospitals/stream` | GET | Server-Sent Events (SSE) live bed telemetry stream |
+| `/api/emergency` | POST | Submit emergency request with greedy best-hospital allocation |
 | `/api/health` | GET/POST | Read/Update personal health records |
 
 ### Admin Blueprint (`/admin/` & `/api/admin/`)
@@ -111,16 +112,59 @@ Arogya-Map/
 |---|---|---|
 | `/admin/dashboard` | GET | Admin Panel UI view (Protected) |
 | `/api/admin/dashboard-stats` | GET | Aggregated system telemetry and usage |
-| `/api/admin/hospitals` | GET/POST/PUT | Manage/Onboard hospital capabilities |
-| `/api/admin/patients` | GET/PATCH | Review and assign emergency queues |
+| `/api/admin/hospitals` | GET/POST/PUT | Manage/Onboard hospital capabilities & live bed counts |
+| `/api/admin/patients` | GET/PATCH | Review and assign emergency queues (restores bed count on completion) |
 | `/api/admin/users/<id>/role` | PATCH | RBAC assignments and restrictions |
+
+---
+
+## ⚡ Database Migration
+
+To safely add the composite spatial index on `hospitals(latitude, longitude)` without data loss:
+
+```bash
+# Option 1: Run the automated migration script
+python backend/migrate_index.py
+
+# Option 2: Run via MySQL CLI / Workbench
+ALTER TABLE hospitals ADD INDEX idx_hospitals_lat_lng (latitude, longitude);
+```
+
+---
+
+## 🔒 Production Note on Geolocation (HTTPS)
+
+> **Important**: Modern browsers require a secure origin (**HTTPS**) to access `navigator.geolocation.watchPosition` in production environments. On `localhost` or `127.0.0.1`, browsers permit geolocation over HTTP for local development and testing. When deploying to production (e.g. AWS, Render, Vercel, DigitalOcean), ensure an SSL/TLS certificate is configured. Arogya Map also includes an integrated OpenStreetMap Nominatim search box fallback if geolocation is denied or unavailable.
+
+---
+
+## 🧪 Testing the API
+
+```bash
+# 1. Install dependencies
+pip install -r backend/requirements.txt
+
+# 2. Run database migration
+python backend/migrate_index.py
+
+# 3. Start the Flask server
+python run.py
+
+# 4. Test the location-based nearest endpoint (e.g., Pune coordinates, 10 km radius):
+curl "http://localhost:5000/api/hospitals/nearest?lat=18.6298&lng=73.7997&radius=10"
+
+# 5. Test with filters (clinics only, 5 km radius):
+curl "http://localhost:5000/api/hospitals/nearest?lat=18.6298&lng=73.7997&radius=5&type=clinic"
+```
 
 ---
 
 ## ⚡ Algorithms & Concepts
 
 - **Role-Based Access Control (RBAC)**: Secure route protection at the backend level ensuring isolation of administrative commands.
-- **Haversine Distance**: Great-circle distance for shortest path calculations.
+- **Bounding-Box Prefilter + SQL Haversine**: Composite indexed boundary prefilter with great-circle distance calculation for sub-millisecond database queries.
+- **OpenStreetMap Overpass API**: Dynamic querying of local clinics and hospitals with rate-friendly in-memory TTL caching and deduplication.
 - **Priority Queue**: Sorting patients by severity (Critical > High > Medium > Low).
-- **Greedy Allocation**: Assigning hospitals with the most available resources.
-- **Deadlock Prevention**: MySQL Transactions (`BEGIN`, `COMMIT`, `ROLLBACK`, `FOR UPDATE`).
+- **Greedy Bed Allocation**: Assigning hospitals with the most available resources.
+- **Deadlock-Safe Transactions**: MySQL Transactions (`BEGIN`, `COMMIT`, `ROLLBACK`, `FOR UPDATE`) with automatic bed release upon emergency request completion.
+- **Server-Sent Events (SSE)**: Instantaneous live bed updates pushed directly to connected Leaflet maps and list views.

@@ -27,7 +27,7 @@
         </div>
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Main</div>
-            <a href="/dashboard"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+            <a href="/dashboard"><i class="fa-solid fa-table-cells-large"></i> Dashboard</a>
             <a href="/hospitals" class="active"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
             <a href="/emergency" class="emergency-link"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
@@ -92,41 +92,102 @@
 
     <main class="container" style="margin-top: 40px;">
 
-        <!-- Location Info -->
+        <!-- Location & Radius Control Bar -->
         <div class="glass-card reveal"
-            style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div class="flex" style="gap: 12px;">
-                <div class="stat-icon teal"><i class="fa-solid fa-map-marker-alt"></i></div>
+            style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div class="flex" style="gap: 12px; min-width: 260px;">
+                <div class="stat-icon teal" id="location-icon"><i class="fa-solid fa-location-dot"></i></div>
                 <div>
-                    <h4 id="location-status">Location not detected</h4>
-                    <p style="font-size: 0.85rem;" id="location-coords">Click "Detect My Location" to find hospitals
-                        near you</p>
+                    <h4 id="location-status">Detecting Live Location...</h4>
+                    <p style="font-size: 0.85rem;" id="location-coords">Acquiring GPS fix via browser geolocation</p>
                 </div>
             </div>
-            <div class="flex" style="gap: 8px;">
-                <span class="badge badge-available" id="hospitals-count">0 Hospitals Found</span>
+            
+            <div class="flex" style="gap: 14px; flex-wrap: wrap; align-items: center;">
+                <div class="flex" style="gap: 6px; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Radius:</span>
+                    <div class="radius-selector" id="radius-selector">
+                        <button class="radius-btn" onclick="setSearchRadius(5)">5 km</button>
+                        <button class="radius-btn active" onclick="setSearchRadius(10)">10 km</button>
+                        <button class="radius-btn" onclick="setSearchRadius(20)">20 km</button>
+                    </div>
+                </div>
+                <span class="badge badge-available" id="hospitals-count">0 Facilities Found</span>
             </div>
         </div>
 
-        <!-- Search -->
+        <!-- Manual Location Search / Fallback (Nominatim Geocoding) -->
         <div class="search-bar reveal">
-            <input type="text" id="hospital-search" placeholder="Search by hospital name, city, or speciality..."
-                oninput="debounceSearch(this.value)">
-            <button class="btn btn-primary" onclick="searchHospitals()" id="search-btn">
-                <i class="fa-solid fa-search"></i> Search
+            <input type="text" id="hospital-search" 
+                placeholder="Search by city, pincode, hospital name, or address (e.g. Pune, 411001, Bandra)..."
+                oninput="debounceSearch(this.value)"
+                onkeydown="if(event.key === 'Enter') handleManualSearch()">
+            <button class="btn btn-primary" onclick="handleManualSearch()" id="search-btn">
+                <i class="fa-solid fa-magnifying-glass"></i> Search
             </button>
         </div>
 
-        <!-- Map -->
-        <div class="glass-card reveal" style="padding: 0; overflow: hidden; margin-bottom: 32px;">
-            <div id="hospital-map" class="map-container" style="height: 400px;"></div>
+        <!-- Filter Chips -->
+        <div class="filter-chips-container reveal" id="filter-chips">
+            <div class="filter-chip active" data-filter="all" onclick="setFacilityFilter('all')">
+                <i class="fa-solid fa-layer-group"></i> All Facilities
+                <span class="chip-count" id="count-all">0</span>
+            </div>
+            <div class="filter-chip" data-filter="hospital" onclick="setFacilityFilter('hospital')">
+                <i class="fa-solid fa-hospital"></i> Hospitals
+                <span class="chip-count" id="count-hospital">0</span>
+            </div>
+            <div class="filter-chip" data-filter="clinic" onclick="setFacilityFilter('clinic')">
+                <i class="fa-solid fa-clinic-medical"></i> Clinics
+                <span class="chip-count" id="count-clinic">0</span>
+            </div>
+            <div class="filter-chip" data-filter="icu" onclick="setFacilityFilter('icu')">
+                <i class="fa-solid fa-heart-pulse"></i> Has ICU Beds
+                <span class="chip-count" id="count-icu">0</span>
+            </div>
+            <div class="filter-chip" data-filter="open_beds" onclick="setFacilityFilter('open_beds')">
+                <i class="fa-solid fa-bed"></i> Open Beds Only
+                <span class="chip-count" id="count-open-beds">0</span>
+            </div>
         </div>
 
-        <!-- Hospital Grid -->
-        <div style="margin-bottom: 24px;">
-            <h2 class="section-title reveal">Available Hospitals</h2>
-            <p class="section-subtitle reveal">Sorted by distance from your location</p>
+        <!-- Map Section with Legend -->
+        <div class="glass-card reveal" style="padding: 0; overflow: hidden; margin-bottom: 24px; position: relative;">
+            <div style="padding: 12px 18px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: var(--bg-card);">
+                <div style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-map" style="color: var(--teal);"></i>
+                    <span>Real-time Geo-spatial View</span>
+                </div>
+                <div style="display: flex; gap: 14px; font-size: 0.78rem; color: var(--text-secondary); flex-wrap: wrap;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--teal);"></span>
+                        Partner Hospital (Live Beds)
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #64748b;"></span>
+                        OSM Hospital (Call first)
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #3b82f6;"></span>
+                        Clinic / Doctor
+                    </span>
+                </div>
+            </div>
+            <div id="hospital-map" class="map-container" style="height: 440px; border: none; border-radius: 0;"></div>
         </div>
+
+        <!-- Hospital List Panel -->
+        <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 class="section-title reveal">Healthcare Facilities</h2>
+                <p class="section-subtitle reveal" id="list-subtitle">Sorted by distance from your location</p>
+            </div>
+            <div id="live-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted);">
+                <i class="fa-solid fa-circle" style="color: var(--emerald); font-size: 8px;"></i>
+                <span>Live polling active (30s)</span>
+            </div>
+        </div>
+
         <div id="hospital-list" class="hospital-grid">
             <!-- Skeleton Loaders -->
             <div class="glass-card skeleton skeleton-card"></div>

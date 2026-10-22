@@ -23,5 +23,5 @@ if __name__ == '__main__':
     print("  Arogya Map — Smart Emergency Healthcare System")
     print(f"  Server starting at: http://127.0.0.1:{port}")
     print("=" * 60 + "\n")
-    app.run(debug=debug, port=port)
+    app.run(debug=debug, port=port, threaded=True)
 

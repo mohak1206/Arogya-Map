@@ -4,3 +4,4 @@ flask-mysqldb
 mysql-connector-python
 werkzeug
 python-dotenv
+requests
