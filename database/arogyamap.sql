@@ -88,6 +88,25 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 );
 
 -- ============================================================
+-- Table 7: osm_facilities
+-- Stores OpenStreetMap healthcare facilities (hospitals, clinics, doctors)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS osm_facilities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    osm_id BIGINT NOT NULL,
+    osm_type VARCHAR(20) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL DEFAULT 'hospital',
+    address VARCHAR(500) DEFAULT '',
+    phone VARCHAR(100) DEFAULT NULL,
+    latitude DECIMAL(10, 8) NOT NULL,
+    longitude DECIMAL(11, 8) NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_osm_entity (osm_type, osm_id),
+    INDEX idx_osm_lat_lng (latitude, longitude)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- SAMPLE DATA: 5 hospitals in Mumbai & Delhi
 -- ============================================================
 INSERT INTO hospitals (name, location, latitude, longitude, total_beds, available_beds, icu_beds, available_icu, ventilators, available_ventilators, contact) VALUES

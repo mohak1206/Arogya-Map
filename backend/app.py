@@ -22,7 +22,7 @@ from flask_cors import CORS
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
-from osm_service import fetch_osm_facilities
+from osm_service import get_osm_facilities, deduplicate_facilities, haversine_km
 from broadcaster import broadcaster
 
 # ── App Initialization ──────────────────────────────────────────────────────
@@ -297,167 +297,207 @@ def get_hospital(hospital_id):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/hospitals/nearest', methods=['GET'])
-def get_nearest_hospitals():
+def validate_nearest_params(args):
     """
-    Find nearest hospitals and clinics within a specified radius (km).
-    Combines:
-      - Partner hospitals from MySQL database (with live bed availability)
-      - OpenStreetMap facilities via Overpass API (labelled 'capacity unknown')
-    Uses bounding-box prefilter + SQL Haversine calculation, with deduplication.
+    Validates lat (-90..90), lng (-180..180), radius (1..30 km, default 10),
+    and type in ('hospital', 'clinic', 'doctors', 'all', default 'all').
+    Returns (lat, lng, radius, facility_type, error_str).
     """
-    # 1. Validate 'lat' and 'lng'
-    lat_val = request.args.get('lat')
-    lng_val = request.args.get('lng')
+    lat_val = args.get('lat')
+    lng_val = args.get('lng')
 
     if lat_val is None or lng_val is None:
-        return jsonify({'error': "Query parameters 'lat' and 'lng' are required."}), 400
+        return None, None, None, None, "Query parameters 'lat' and 'lng' are required."
 
     try:
         lat = float(lat_val)
         lng = float(lng_val)
     except (TypeError, ValueError):
-        return jsonify({'error': "Invalid latitude/longitude: must be valid numbers."}), 400
+        return None, None, None, None, "Invalid latitude/longitude: must be valid numbers."
 
     if not (-90.0 <= lat <= 90.0):
-        return jsonify({'error': "Latitude must be between -90 and 90."}), 400
+        return None, None, None, None, "Latitude must be between -90 and 90."
 
     if not (-180.0 <= lng <= 180.0):
-        return jsonify({'error': "Longitude must be between -180 and 180."}), 400
+        return None, None, None, None, "Longitude must be between -180 and 180."
 
-    # 2. Validate 'radius' (default 10 km, max 50 km)
     try:
-        radius = float(request.args.get('radius', 10))
+        radius = float(args.get('radius', 10))
     except (TypeError, ValueError):
-        return jsonify({'error': "Invalid radius: must be a positive number."}), 400
+        return None, None, None, None, "Invalid radius: must be a positive number."
 
-    if radius <= 0 or radius > 50:
-        return jsonify({'error': "Radius must be greater than 0 and at most 50 km."}), 400
+    if radius < 1 or radius > 30:
+        return None, None, None, None, "Radius must be between 1 and 30 km."
 
-    # 3. Validate 'type' (optional: 'hospital', 'clinic', 'all')
-    facility_type = request.args.get('type', 'all').strip().lower()
-    if facility_type not in ('hospital', 'clinic', 'all'):
-        return jsonify({'error': "Invalid type parameter. Allowed values: 'hospital', 'clinic', 'all'."}), 400
+    facility_type = args.get('type', 'all').strip().lower()
+    if facility_type not in ('hospital', 'clinic', 'doctors', 'all'):
+        return None, None, None, None, "Invalid type parameter. Allowed values: 'hospital', 'clinic', 'doctors', 'all'."
 
-    # 4. Check 'include_osm' (default true)
-    include_osm_param = request.args.get('include_osm', 'true').strip().lower()
-    include_osm = include_osm_param not in ('false', '0', 'no')
+    return lat, lng, radius, facility_type, None
+
+
+def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
+    """
+    Query registered MySQL partner hospitals within radius using
+    a bounding-box prefilter + SQL Haversine formula.
+    """
+    if facility_type in ('clinic', 'doctors'):
+        return []
+
+    delta_lat = radius / 111.045
+    min_lat = lat - delta_lat
+    max_lat = lat + delta_lat
+
+    cos_lat = math.cos(math.radians(lat))
+    if abs(cos_lat) > 1e-6:
+        delta_lng = radius / (111.045 * cos_lat)
+        min_lng = lng - abs(delta_lng)
+        max_lng = lng + abs(delta_lng)
+    else:
+        min_lng = -180.0
+        max_lng = 180.0
+
+    query = """
+        SELECT id, name, location, latitude, longitude,
+               total_beds, available_beds, icu_beds, available_icu,
+               ventilators, available_ventilators, contact, speciality,
+               (6371 * 2 * ASIN(SQRT(
+                   POWER(SIN(RADIANS(latitude - %s) / 2), 2) +
+                   COS(RADIANS(%s)) * COS(RADIANS(latitude)) *
+                   POWER(SIN(RADIANS(longitude - %s) / 2), 2)
+               ))) AS distance_km
+        FROM hospitals
+        WHERE latitude BETWEEN %s AND %s
+          AND longitude BETWEEN %s AND %s
+        HAVING distance_km <= %s
+        ORDER BY distance_km ASC
+    """
+    cur.execute(query, (lat, lat, lng, min_lat, max_lat, min_lng, max_lng, radius))
+    rows = cur.fetchall()
+
+    db_normalized = []
+    for h in rows:
+        db_normalized.append({
+            "id": h['id'],
+            "name": h['name'],
+            "type": "hospital",
+            "lat": float(h['latitude']),
+            "lng": float(h['longitude']),
+            "distance_km": round(float(h['distance_km']), 2),
+            "phone": h.get('contact'),
+            "source": "db",
+            "live": True,
+            "total_beds": int(h.get('total_beds', 0)),
+            "available_beds": int(h.get('available_beds', 0)),
+            "icu_beds": int(h.get('icu_beds', 0)),
+            "available_icu": int(h.get('available_icu', 0)),
+            "ventilators": int(h.get('ventilators', 0)),
+            "available_ventilators": int(h.get('available_ventilators', 0)),
+            "location": h.get('location', ''),
+            "speciality": h.get('speciality', 'General')
+        })
+    return db_normalized
+
+
+@app.route('/api/hospitals/nearest', methods=['GET'])
+def get_nearest_hospitals():
+    """
+    Find nearest registered partner hospitals from MySQL within specified radius (km).
+    Returns instantly without blocking on external services (include_osm=false by default).
+    If include_osm=true is explicitly requested, merges OSM facilities for backwards compatibility.
+    """
+    lat, lng, radius, facility_type, err = validate_nearest_params(request.args)
+    if err:
+        return jsonify({'error': err}), 400
+
+    include_osm_param = request.args.get('include_osm', 'false').strip().lower()
+    include_osm = include_osm_param in ('true', '1', 'yes')
 
     warnings = []
-
-    # 5. Query DB hospitals using Bounding-Box Prefilter + Exact SQL Haversine
     db_normalized = []
-    if facility_type in ('hospital', 'all'):
-        try:
-            # 1 deg latitude ~= 111.045 km
-            delta_lat = radius / 111.045
-            min_lat = lat - delta_lat
-            max_lat = lat + delta_lat
+    try:
+        cur = mysql.connection.cursor()
+        db_normalized = query_db_hospitals(cur, lat, lng, radius, facility_type)
+        cur.close()
+    except Exception as e:
+        warnings.append(f"Database hospital query error: {str(e)}")
 
-            # Longitude degree span based on latitude
-            cos_lat = math.cos(math.radians(lat))
-            if abs(cos_lat) > 1e-6:
-                delta_lng = radius / (111.045 * cos_lat)
-                min_lng = lng - abs(delta_lng)
-                max_lng = lng + abs(delta_lng)
-            else:
-                min_lng = -180.0
-                max_lng = 180.0
+    if not include_osm:
+        result = {
+            'hospitals': db_normalized,
+            'count': len(db_normalized),
+            'user_lat': lat,
+            'user_lng': lng,
+            'radius': radius,
+            'type': facility_type
+        }
+        if warnings:
+            result['warnings'] = warnings
+        return jsonify(result), 200
 
-            cur = mysql.connection.cursor()
-            query = """
-                SELECT id, name, location, latitude, longitude,
-                       total_beds, available_beds, icu_beds, available_icu,
-                       ventilators, available_ventilators, contact,
-                       (6371 * 2 * ASIN(SQRT(
-                           POWER(SIN(RADIANS(latitude - %s) / 2), 2) +
-                           COS(RADIANS(%s)) * COS(RADIANS(latitude)) *
-                           POWER(SIN(RADIANS(longitude - %s) / 2), 2)
-                       ))) AS distance_km
-                FROM hospitals
-                WHERE latitude BETWEEN %s AND %s
-                  AND longitude BETWEEN %s AND %s
-                HAVING distance_km <= %s
-                ORDER BY distance_km ASC
-            """
-            cur.execute(query, (lat, lat, lng, min_lat, max_lat, min_lng, max_lng, radius))
-            db_hospitals = cur.fetchall()
-            cur.close()
-
-            for h in db_hospitals:
-                db_normalized.append({
-                    "id": h['id'],
-                    "name": h['name'],
-                    "type": "hospital",
-                    "lat": float(h['latitude']),
-                    "lng": float(h['longitude']),
-                    "distance_km": round(float(h['distance_km']), 2),
-                    "phone": h.get('contact'),
-                    "source": "db",
-                    "live": True,
-                    "total_beds": int(h.get('total_beds', 0)),
-                    "available_beds": int(h.get('available_beds', 0)),
-                    "icu_beds": int(h.get('icu_beds', 0)),
-                    "available_icu": int(h.get('available_icu', 0)),
-                    "ventilators": int(h.get('ventilators', 0)),
-                    "available_ventilators": int(h.get('available_ventilators', 0)),
-                    "location": h.get('location', '')
-                })
-        except Exception as e:
-            warnings.append(f"Database hospital query error: {str(e)}")
-
-    # 6. Fetch OpenStreetMap facilities if requested
+    # Backwards compatibility: include_osm=true requested
     osm_deduped = []
-    if include_osm:
-        try:
-            radius_m = radius * 1000
-            osm_facilities, osm_warning = fetch_osm_facilities(lat, lng, radius_m)
-            if osm_warning:
-                warnings.append(osm_warning)
+    try:
+        cur = mysql.connection.cursor()
+        osm_facilities, osm_warn = get_osm_facilities(lat, lng, radius, facility_type, db_cursor=cur)
+        cur.close()
+        if osm_warn:
+            warnings.append(osm_warn)
+        osm_deduped = deduplicate_facilities(osm_facilities, db_normalized)
+    except Exception as e:
+        warnings.append(f"OpenStreetMap facilities error: {str(e)}")
 
-            def clean_name(s):
-                return re.sub(r'[^a-z0-9]', '', (s or '').lower())
-
-            for item in osm_facilities:
-                # Filter by requested type
-                if facility_type != 'all' and item.get('type') != facility_type:
-                    continue
-
-                # Compute haversine distance
-                item_lat = item['lat']
-                item_lng = item['lng']
-                dist = haversine(lat, lng, item_lat, item_lng)
-                if dist > radius:
-                    continue
-                item['distance_km'] = round(dist, 2)
-
-                # Deduplicate: drop if within ~100m of a DB hospital or near-identical name within 1km
-                is_duplicate = False
-                clean_osm_name = clean_name(item['name'])
-
-                for db_h in db_normalized:
-                    dist_to_db = haversine(item_lat, item_lng, db_h['lat'], db_h['lng'])
-                    if dist_to_db < 0.10:  # ~100 meters
-                        is_duplicate = True
-                        break
-                    clean_db_name = clean_name(db_h['name'])
-                    if len(clean_osm_name) >= 4 and len(clean_db_name) >= 4:
-                        if (clean_osm_name in clean_db_name or clean_db_name in clean_osm_name) and dist_to_db < 1.0:
-                            is_duplicate = True
-                            break
-
-                if not is_duplicate:
-                    osm_deduped.append(item)
-        except Exception as e:
-            warnings.append(f"OpenStreetMap facilities processing error: {str(e)}")
-
-    # 7. Merge and sort all facilities by distance ascending
     merged = db_normalized + osm_deduped
     merged.sort(key=lambda x: x['distance_km'])
 
     result = {
         'hospitals': merged,
         'count': len(merged),
+        'user_lat': lat,
+        'user_lng': lng,
+        'radius': radius,
+        'type': facility_type
+    }
+    if warnings:
+        result['warnings'] = warnings
+    return jsonify(result), 200
+
+
+@app.route('/api/osm/nearest', methods=['GET'])
+def get_nearest_osm():
+    """
+    Returns healthcare facilities (hospitals, clinics, doctors) from OpenStreetMap.
+    Queries local MySQL table first, falls back to live Overpass mirrors,
+    and deduplicates against registered partner hospitals.
+    """
+    lat, lng, radius, facility_type, err = validate_nearest_params(request.args)
+    if err:
+        return jsonify({'error': err}), 400
+
+    warnings = []
+    db_hospitals = []
+    osm_deduped = []
+
+    try:
+        cur = mysql.connection.cursor()
+        # Query registered DB hospitals in radius to deduplicate against them
+        db_hospitals = query_db_hospitals(cur, lat, lng, radius, 'all')
+
+        # Query OSM facilities (local table first, then Overpass fallback)
+        osm_facilities, osm_warn = get_osm_facilities(lat, lng, radius, facility_type, db_cursor=cur)
+        cur.close()
+
+        if osm_warn:
+            warnings.append(osm_warn)
+
+        osm_deduped = deduplicate_facilities(osm_facilities, db_hospitals)
+        osm_deduped.sort(key=lambda x: x['distance_km'])
+    except Exception as e:
+        warnings.append(f"Failed to fetch OpenStreetMap facilities: {str(e)}")
+
+    result = {
+        'hospitals': osm_deduped,
+        'count': len(osm_deduped),
         'user_lat': lat,
         'user_lng': lng,
         'radius': radius,

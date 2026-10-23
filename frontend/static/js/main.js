@@ -17,6 +17,11 @@ let lastFetchedLng = null;
 let currentSearchRadius = 10; // km
 let currentFacilityFilter = 'all'; // 'all' | 'hospital' | 'clinic' | 'icu' | 'open_beds'
 let allFetchedFacilities = [];
+let dbFacilities = [];
+let osmFacilities = [];
+let activeAbortController = null;
+let activeOsmAbortController = null;
+let radiusDebounceTimeout = null;
 let markerMapById = new Map();
 let initialFitDone = false;
 let searchTimeout = null;
@@ -496,11 +501,53 @@ function renderHospitals(hospitals) {
 // REAL-TIME LOCATION & NEAREST FACILITIES (PHASE 1 & 2)
 // ═══════════════════════════════════════════════════════════
 
-async function fetchNearestFacilities(showSkeleton = true) {
+function mergeAndSortFacilities(dbList, osmList) {
+  const clean = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const dedupedOsm = [];
+
+  for (const osm of (osmList || [])) {
+    let isDup = false;
+    const osmNameClean = clean(osm.name);
+
+    for (const db of (dbList || [])) {
+      const dist = calculateHaversineDistance(osm.lat, osm.lng, db.lat, db.lng);
+      // Under 100m proximity
+      if (dist <= 0.10) {
+        isDup = true;
+        break;
+      }
+      // Under 150m with similar name
+      const dbNameClean = clean(db.name);
+      if (dist <= 0.15 && osmNameClean.length >= 3 && dbNameClean.length >= 3) {
+        if (osmNameClean.includes(dbNameClean) || dbNameClean.includes(osmNameClean)) {
+          isDup = true;
+          break;
+        }
+      }
+      // Under 1.0 km with strong name match
+      if (dist <= 1.0 && osmNameClean.length >= 5 && dbNameClean.length >= 5) {
+        if (osmNameClean === dbNameClean) {
+          isDup = true;
+          break;
+        }
+      }
+    }
+
+    if (!isDup) {
+      dedupedOsm.push(osm);
+    }
+  }
+
+  const combined = [...(dbList || []), ...dedupedOsm];
+  combined.sort((a, b) => (a.distance_km || 0) - (b.distance_km || 0));
+  return combined;
+}
+
+async function fetchFacilitiesProgressive(isLocationOrRadiusChange = true, showSkeleton = true) {
   if (currentUserLat === null || currentUserLng === null) return;
 
   const container = document.getElementById('hospital-list');
-  if (showSkeleton && container) {
+  if (showSkeleton && container && isLocationOrRadiusChange) {
     container.innerHTML = `
       <div class="glass-card skeleton skeleton-card"></div>
       <div class="glass-card skeleton skeleton-card"></div>
@@ -508,10 +555,16 @@ async function fetchNearestFacilities(showSkeleton = true) {
     `;
   }
 
-  const url = `${API_BASE}/hospitals/nearest?lat=${currentUserLat}&lng=${currentUserLng}&radius=${currentSearchRadius}&include_osm=true`;
+  // Cancel any prior in-flight DB request
+  if (activeAbortController) {
+    activeAbortController.abort();
+  }
+  activeAbortController = new AbortController();
+
+  const url = `${API_BASE}/hospitals/nearest?lat=${currentUserLat}&lng=${currentUserLng}&radius=${currentSearchRadius}&type=${currentFacilityFilter}&include_osm=false`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: activeAbortController.signal });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.error || `Server returned ${res.status}`);
@@ -519,29 +572,93 @@ async function fetchNearestFacilities(showSkeleton = true) {
     const data = await res.json();
     lastFetchedLat = currentUserLat;
     lastFetchedLng = currentUserLng;
-    allFetchedFacilities = data.hospitals || [];
+    dbFacilities = data.hospitals || [];
 
-    if (data.warnings && data.warnings.length > 0) {
-      console.warn('API Warnings:', data.warnings);
-    }
-
+    // Immediately render DB partner hospitals
+    allFetchedFacilities = mergeAndSortFacilities(dbFacilities, osmFacilities);
     applyFilterAndRender();
+
+    // Launch background OSM facility fetch on location or radius change
+    if (isLocationOrRadiusChange) {
+      fetchOsmFacilitiesBackground(currentUserLat, currentUserLng, currentSearchRadius, currentFacilityFilter);
+    }
   } catch (err) {
-    console.error('Failed to load nearest facilities:', err);
-    if (container) {
+    if (err.name === 'AbortError') return;
+    console.error('Failed to load registered partner hospitals:', err);
+    if (container && (!allFetchedFacilities || allFetchedFacilities.length === 0)) {
       container.innerHTML = `
         <div class="glass-card" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
           <i class="fa-solid fa-triangle-exclamation" style="font-size: 2.5rem; color: var(--rose); margin-bottom: 12px;"></i>
           <h3>Unable to fetch healthcare facilities</h3>
           <p style="color: var(--text-muted); margin-top: 6px;">${err.message || 'Please check your connection and try again.'}</p>
-          <button class="btn btn-primary btn-sm" style="margin-top: 16px;" onclick="fetchNearestFacilities(true)">
+          <button class="btn btn-primary btn-sm" style="margin-top: 16px;" onclick="fetchFacilitiesProgressive(true, true)">
             <i class="fa-solid fa-rotate-right"></i> Retry
           </button>
         </div>
       `;
     }
-    showToast('Failed to load facilities: ' + err.message, 'error');
   }
+}
+
+// Backwards-compatible alias for existing callers
+const fetchNearestFacilities = fetchFacilitiesProgressive;
+
+async function fetchOsmFacilitiesBackground(lat, lng, radius, type) {
+  if (activeOsmAbortController) {
+    activeOsmAbortController.abort();
+  }
+  activeOsmAbortController = new AbortController();
+
+  const indicator = document.getElementById('osm-loading-indicator');
+  const warningEl = document.getElementById('osm-warning-notice');
+  const warningText = document.getElementById('osm-warning-text');
+
+  if (indicator) indicator.style.display = 'flex';
+  if (warningEl) warningEl.style.display = 'none';
+
+  try {
+    const osmUrl = `${API_BASE}/osm/nearest?lat=${lat}&lng=${lng}&radius=${radius}&type=${type}`;
+    const res = await fetch(osmUrl, { signal: activeOsmAbortController.signal });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Server returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    osmFacilities = data.hospitals || [];
+
+    // Merge and re-sort merged facilities by distance
+    allFetchedFacilities = mergeAndSortFacilities(dbFacilities, osmFacilities);
+    applyFilterAndRender();
+
+    if (data.warnings && data.warnings.length > 0 && osmFacilities.length === 0) {
+      if (warningEl) {
+        if (warningText) warningText.innerText = "Some nearby clinics couldn't be loaded. Showing registered hospitals.";
+        warningEl.style.display = 'flex';
+      }
+    }
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    // Quiet failure handling without console spam
+    if (warningEl) {
+      if (warningText) warningText.innerText = "Some nearby clinics couldn't be loaded. Showing registered hospitals.";
+      warningEl.style.display = 'flex';
+    }
+  } finally {
+    if (indicator) indicator.style.display = 'none';
+  }
+}
+
+function retryOsmFetch() {
+  if (currentUserLat !== null && currentUserLng !== null) {
+    fetchOsmFacilitiesBackground(currentUserLat, currentUserLng, currentSearchRadius, currentFacilityFilter);
+  }
+}
+
+function dismissOsmWarning() {
+  const warningEl = document.getElementById('osm-warning-notice');
+  if (warningEl) warningEl.style.display = 'none';
 }
 
 function updateChipCounts() {
@@ -606,7 +723,7 @@ function applyFilterAndRender() {
         <i class="fa-solid fa-hospital-user" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 16px;"></i>
         <h3 style="color: var(--text-primary);">No facilities found within ${currentSearchRadius} km</h3>
         <p style="color: var(--text-muted); margin-top: 8px; max-width: 500px; margin-left: auto; margin-right: auto;">
-          Try expanding your search radius to 20 km or switching the filter chips above.
+          Try expanding your search radius to 20 km or resetting the filter chips above.
         </p>
         <div style="margin-top: 16px; display: flex; justify-content: center; gap: 10px;">
           <button class="btn btn-outline btn-sm" onclick="setSearchRadius(20)">
@@ -633,7 +750,7 @@ function applyFilterAndRender() {
     const isClinic = h.type === 'clinic';
 
     let badgeClass = 'badge-osm';
-    let badgeText = 'CAPACITY UNKNOWN, CALL FIRST';
+    let badgeText = 'BED DATA UNAVAILABLE';
 
     if (isPartner) {
       badgeClass = isAvailable ? 'badge-available' : 'badge-full';
@@ -644,13 +761,22 @@ function applyFilterAndRender() {
     }
 
     const distText = h.distance_km != null ? `${h.distance_km} km away` : (h.location || 'Nearby');
-    const occupancy = h.total_beds > 0 ? Math.round(((h.total_beds - h.available_beds) / h.total_beds) * 100) : 0;
+    const occupancy = (h.total_beds && h.total_beds > 0)
+      ? Math.round(((h.total_beds - (h.available_beds || 0)) / h.total_beds) * 100)
+      : 0;
 
     card.innerHTML = `
       <div class="hospital-header">
         <div style="flex: 1; padding-right: 8px;">
-          <h3>${h.name}</h3>
-          <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+            <h3>${h.name}</h3>
+            ${isPartner ? `
+              <span class="badge badge-source-db"><i class="fa-solid fa-circle-check"></i> Live beds</span>
+            ` : `
+              <span class="badge badge-source-osm"><i class="fa-solid fa-map"></i> OpenStreetMap</span>
+            `}
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
             <span class="badge ${badgeClass}">${badgeText}</span>
             <span class="badge badge-distance"><i class="fa-solid fa-location-dot"></i> ${distText}</span>
           </div>
@@ -688,9 +814,9 @@ function applyFilterAndRender() {
           </div>
         </div>
       ` : `
-        <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; font-size: 0.825rem; color: var(--text-secondary); display: flex; align-items: center; gap: 10px;">
-          <i class="fa-solid fa-circle-info" style="color: var(--blue); font-size: 1.1rem;"></i>
-          <div>OpenStreetMap facility: live telemetry not linked. Please call before arrival.</div>
+        <div class="osm-unconnected-card">
+          <i class="fa-solid fa-circle-info" style="color: var(--blue); font-size: 1.1rem; flex-shrink: 0;"></i>
+          <div>Not connected to bed system · Bed data unavailable, please call before arrival.</div>
         </div>
       `}
 
@@ -703,7 +829,7 @@ function applyFilterAndRender() {
           </button>
         ` : (h.phone ? `
           <a class="btn btn-primary btn-sm" href="tel:${h.phone}">
-            <i class="fa-solid fa-phone"></i> Call Now
+            <i class="fa-solid fa-phone"></i> Call
           </a>
         ` : '')}
         <button class="btn btn-outline btn-sm" onclick="getDirections(${h.lat}, ${h.lng}, '${h.name.replace(/'/g, "\\'")}')">
@@ -761,7 +887,7 @@ function updateLayerMarkers(facilities) {
       `;
     } else {
       bedBadgeHtml = `
-        <div style="background: rgba(100, 116, 139, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; color: var(--text-secondary);">
+        <div style="background: rgba(100, 116, 139, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; color: var(--text-secondary); border: 1px solid rgba(100, 116, 139, 0.2);">
           <i class="fa-solid fa-circle-info"></i> Capacity unknown, call first
         </div>
       `;
@@ -939,7 +1065,7 @@ function handleLiveBedUpdate(data) {
 function setSearchRadius(radiusKm) {
   currentSearchRadius = Number(radiusKm);
 
-  document.querySelectorAll('.radius-btn').forEach(btn => {
+  document.querySelectorAll('#radius-selector .radius-btn').forEach(btn => {
     btn.classList.toggle('active', btn.innerText.includes(`${radiusKm} km`));
   });
 
@@ -948,15 +1074,28 @@ function setSearchRadius(radiusKm) {
     if (userRadiusCircle && hospitalMap) {
       hospitalMap.fitBounds(userRadiusCircle.getBounds(), { padding: [25, 25] });
     }
-    fetchNearestFacilities(true);
+
+    // Cancel prior pending debounce
+    clearTimeout(radiusDebounceTimeout);
+    // 300ms debounce on radius change
+    radiusDebounceTimeout = setTimeout(() => {
+      osmFacilities = []; // Reset OSM list for newly selected radius
+      fetchFacilitiesProgressive(true, true);
+    }, 300);
   }
 }
 
 function setFacilityFilter(filterName) {
   currentFacilityFilter = filterName;
 
+  // Sync lower filter chips
   document.querySelectorAll('.filter-chip').forEach(chip => {
     chip.classList.toggle('active', chip.getAttribute('data-filter') === filterName);
+  });
+
+  // Sync upper quick type selector
+  document.querySelectorAll('#type-quick-selector .type-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-type') === filterName);
   });
 
   applyFilterAndRender();
@@ -1469,10 +1608,23 @@ function fallbackToDefaultLocation(lat, lng, label) {
 
 function startPolling() {
   if (pollingIntervalId !== null) clearInterval(pollingIntervalId);
-  pollingIntervalId = setInterval(() => {
+  pollingIntervalId = setInterval(async () => {
     if (currentUserLat !== null && currentUserLng !== null) {
-      // Background poll: refresh bed telemetry without clearing list to skeleton
-      fetchNearestFacilities(false);
+      // 30s background poll: refresh registered DB bed telemetry ONLY!
+      // Do NOT re-query OpenStreetMap on 30s interval to prevent console spam & network load.
+      try {
+        const url = `${API_BASE}/hospitals/nearest?lat=${currentUserLat}&lng=${currentUserLng}&radius=${currentSearchRadius}&type=${currentFacilityFilter}&include_osm=false`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const data = await res.json();
+        dbFacilities = data.hospitals || [];
+
+        // Merge with existing cached OSM facilities without re-querying Overpass
+        allFetchedFacilities = mergeAndSortFacilities(dbFacilities, osmFacilities);
+        applyFilterAndRender();
+      } catch (err) {
+        // Silently ignore background poll network hiccups
+      }
     }
   }, 30000);
 }
@@ -1489,6 +1641,18 @@ function cleanupGeolocationAndPolling() {
   if (sseEventSource) {
     sseEventSource.close();
     sseEventSource = null;
+  }
+  if (activeAbortController) {
+    activeAbortController.abort();
+    activeAbortController = null;
+  }
+  if (activeOsmAbortController) {
+    activeOsmAbortController.abort();
+    activeOsmAbortController = null;
+  }
+  if (radiusDebounceTimeout) {
+    clearTimeout(radiusDebounceTimeout);
+    radiusDebounceTimeout = null;
   }
 }
 

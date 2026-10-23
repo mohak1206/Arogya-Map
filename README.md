@@ -118,16 +118,35 @@ Arogya-Map/
 
 ---
 
-## ⚡ Database Migration
+## ⚡ Database Migrations & OpenStreetMap Setup
 
-To safely add the composite spatial index on `hospitals(latitude, longitude)` without data loss:
-
+### 1. Spatial Index Migration (Safe, idempotent)
+To safely add the composite spatial index on `hospitals(latitude, longitude)`:
 ```bash
-# Option 1: Run the automated migration script
 python backend/migrate_index.py
+```
 
-# Option 2: Run via MySQL CLI / Workbench
-ALTER TABLE hospitals ADD INDEX idx_hospitals_lat_lng (latitude, longitude);
+### 2. OpenStreetMap Local Facilities Table Migration
+To create the indexed `osm_facilities` table in MySQL:
+```bash
+python backend/migrate_osm_table.py
+```
+
+### 3. OpenStreetMap Maharashtra Importer (Monthly Batch Job)
+To populate or refresh local Maharashtra healthcare facilities (hospitals, clinics, doctors) in `osm_facilities`:
+```bash
+python backend/import_osm_maharashtra.py
+```
+> **Performance Note**: `/api/osm/nearest` queries this local MySQL table first using bounding-box prefilter + SQL Haversine (sub-5ms response time), falling back to live Overpass mirrors only if no local facilities exist.
+
+---
+
+## ⚙️ Environment Variables
+
+Add to `.env` (refer to `.env.example`):
+```env
+# OpenStreetMap Overpass API Mirrors (comma-separated in fallback priority order)
+OVERPASS_ENDPOINTS=https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://overpass.private.coffee/api/interpreter
 ```
 
 ---
@@ -138,23 +157,42 @@ ALTER TABLE hospitals ADD INDEX idx_hospitals_lat_lng (latitude, longitude);
 
 ---
 
-## 🧪 Testing the API
+## 🧪 Testing the API & Running the Test Suite
 
 ```bash
 # 1. Install dependencies
 pip install -r backend/requirements.txt
 
-# 2. Run database migration
+# 2. Run database migrations
 python backend/migrate_index.py
+python backend/migrate_osm_table.py
 
-# 3. Start the Flask server
+# 3. Seed / Import Maharashtra OSM facilities
+python backend/import_osm_maharashtra.py
+
+# 4. Run automated test suites
+python tests/test_overpass.py
+python tests/test_api.py
+python tests/test_db_nearest.py
+
+# 5. Start the Flask server
 python run.py
+```
 
-# 4. Test the location-based nearest endpoint (e.g., Pune coordinates, 10 km radius):
-curl "http://localhost:5000/api/hospitals/nearest?lat=18.6298&lng=73.7997&radius=10"
+### Example Curl Commands
 
-# 5. Test with filters (clinics only, 5 km radius):
-curl "http://localhost:5000/api/hospitals/nearest?lat=18.6298&lng=73.7997&radius=5&type=clinic"
+```bash
+# A. Fast Registered Partner Hospitals (sub-15ms, live bed counts):
+curl "http://localhost:5000/api/hospitals/nearest?lat=19.6978&lng=72.7690&radius=10"
+
+# B. OpenStreetMap Nearby Facilities (clinics & hospitals):
+curl "http://localhost:5000/api/osm/nearest?lat=19.6978&lng=72.7690&radius=10"
+
+# C. Filter Clinics Only (5 km radius):
+curl "http://localhost:5000/api/osm/nearest?lat=19.6978&lng=72.7690&radius=5&type=clinic"
+
+# D. Combined Legacy Endpoint (backward compatible):
+curl "http://localhost:5000/api/hospitals/nearest?lat=19.6978&lng=72.7690&radius=10&include_osm=true"
 ```
 
 ---

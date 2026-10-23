@@ -112,6 +112,16 @@
                         <button class="radius-btn" onclick="setSearchRadius(20)">20 km</button>
                     </div>
                 </div>
+
+                <div class="flex" style="gap: 6px; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">Type:</span>
+                    <div class="radius-selector" id="type-quick-selector">
+                        <button class="radius-btn type-btn active" data-type="all" onclick="setFacilityFilter('all')">All</button>
+                        <button class="radius-btn type-btn" data-type="hospital" onclick="setFacilityFilter('hospital')">Hospitals</button>
+                        <button class="radius-btn type-btn" data-type="clinic" onclick="setFacilityFilter('clinic')">Clinics</button>
+                    </div>
+                </div>
+
                 <span class="badge badge-available" id="hospitals-count">0 Facilities Found</span>
             </div>
         </div>
@@ -185,6 +195,28 @@
             <div id="live-indicator" style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-muted);">
                 <i class="fa-solid fa-circle" style="color: var(--emerald); font-size: 8px;"></i>
                 <span>Live polling active (30s)</span>
+            </div>
+        </div>
+
+        <!-- Non-blocking OpenStreetMap Loading Banner -->
+        <div id="osm-loading-indicator" class="osm-loading-banner" style="display: none;">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Loading more clinics and healthcare facilities nearby from OpenStreetMap...</span>
+        </div>
+
+        <!-- Dismissible OpenStreetMap Warning Notice -->
+        <div id="osm-warning-notice" class="osm-warning-banner" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-circle-exclamation" style="color: var(--amber); font-size: 1.1rem;"></i>
+                <span id="osm-warning-text">Some nearby clinics couldn't be loaded. Showing registered hospitals.</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-outline btn-sm" style="padding: 4px 10px; font-size: 0.78rem;" onclick="retryOsmFetch()">
+                    <i class="fa-solid fa-rotate-right"></i> Retry
+                </button>
+                <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 0.78rem;" onclick="dismissOsmWarning()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
         </div>
 

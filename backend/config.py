@@ -37,3 +37,10 @@ class Config:
     FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))
     FLASK_DEBUG = os.getenv('FLASK_DEBUG', 'True').lower() in ('true', '1', 't')
 
+    # Overpass API Mirrors (in order of priority)
+    _raw_endpoints = os.getenv(
+        'OVERPASS_ENDPOINTS',
+        'https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://overpass.private.coffee/api/interpreter'
+    )
+    OVERPASS_ENDPOINTS = [ep.strip() for ep in _raw_endpoints.split(',') if ep.strip()]
+
