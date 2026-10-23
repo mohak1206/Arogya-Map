@@ -39,6 +39,9 @@ CORS(app, supports_credentials=True)
 from database import mysql
 mysql.init_app(app)
 
+from site_config import init_site_config
+init_site_config(app)
+
 
 
 # ── Helper: Haversine Distance Formula ──────────────────────────────────────
@@ -852,20 +855,57 @@ def add_health():
 
 
 # ════════════════════════════════════════════════════════════════════════════
-# CONTACT ROUTE
+# CONTACT ROUTE (hardened)
 # ════════════════════════════════════════════════════════════════════════════
+
+import time as _time
+import logging
+
+_contact_rate = {}  # IP -> list of timestamps
+_CONTACT_LIMIT = 5
+_CONTACT_WINDOW = 3600  # 1 hour
+_EMAIL_RE = re.compile(r'^[^@\s]{1,64}@[^@\s]{1,255}\.[a-zA-Z]{2,}$')
+
 
 @app.route('/api/contact', methods=['POST'])
 def contact_submit():
     """Save a contact form message to the database."""
-    data = request.get_json()
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({'success': False, 'errors': {'form': 'Invalid request body.'}}), 400
+
+    # ── Honeypot ────────────────────────────────────────────
+    if data.get('website', '').strip():
+        return jsonify({'success': True}), 200  # silent discard
+
+    # ── Rate limit ─────────────────────────────────────────
+    client_ip = request.remote_addr or '0.0.0.0'
+    now = _time.time()
+    hits = _contact_rate.get(client_ip, [])
+    hits = [t for t in hits if now - t < _CONTACT_WINDOW]
+    if len(hits) >= _CONTACT_LIMIT:
+        return jsonify({
+            'success': False,
+            'errors': {'form': 'Too many messages. Please try again in an hour.'}
+        }), 429
+
+    # ── Trim & validate ────────────────────────────────────
     name    = data.get('name', '').strip()
     email   = data.get('email', '').strip()
     message = data.get('message', '').strip()
 
-    if not name or not email or not message:
-        return jsonify({'error': 'All fields are required'}), 400
+    errors = {}
+    if len(name) < 2 or len(name) > 100:
+        errors['name'] = 'Name must be between 2 and 100 characters.'
+    if not _EMAIL_RE.match(email) or len(email) > 100:
+        errors['email'] = 'Please enter a valid email address (max 100 characters).'
+    if len(message) < 10 or len(message) > 2000:
+        errors['message'] = 'Message must be between 10 and 2,000 characters.'
 
+    if errors:
+        return jsonify({'success': False, 'errors': errors}), 400
+
+    # ── Insert ─────────────────────────────────────────────
     try:
         cur = mysql.connection.cursor()
         cur.execute(
@@ -874,9 +914,17 @@ def contact_submit():
         )
         mysql.connection.commit()
         cur.close()
-        return jsonify({'message': 'Message received! We will contact you shortly.'}), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+
+        hits.append(now)
+        _contact_rate[client_ip] = hits
+
+        return jsonify({'success': True}), 201
+    except Exception:
+        logging.exception('Contact form save failed')
+        return jsonify({
+            'success': False,
+            'errors': {'form': 'Something went wrong. Please try again later.'}
+        }), 500
 
 
 # ════════════════════════════════════════════════════════════════════════════

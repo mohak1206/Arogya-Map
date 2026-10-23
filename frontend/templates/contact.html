@@ -5,15 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Contact Arogya Map — reach out for support, partnerships, or queries about our emergency healthcare network.">
-    <title>Arogya Map | Contact Us</title>
+        content="Get in touch with the Arogya Map team for support, hospital partnership inquiries, technical assistance, or bug reports.">
+    <title>Contact Us — {{ site.name }}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Contact Us — {{ site.name }}">
+    <meta property="og:description"
+        content="Inquiries, hospital partner registration, and technical support for Arogya Map.">
+    <meta property="og:type" content="website">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body class="has-sidebar">
+    <a href="#main-content" class="ar-skip-link">Skip to content</a>
     <div class="bg-mesh"></div>
 
     <!-- Sidebar -->
@@ -25,14 +32,14 @@
             </a>
             <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" aria-label="Main navigation">
             <div class="sidebar-nav-label">Main</div>
             <a href="/dashboard"><i class="fa-solid fa-table-cells-large"></i> Dashboard</a>
             <a href="/hospitals"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
             <a href="/emergency" class="emergency-link"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
-            <a href="/about"><i class="fa-solid fa-circle-info"></i> About Us</a>
+            <a href="/about"><i class="fa-solid fa-circle-info"></i> About</a>
             <a href="/contact" class="active"><i class="fa-solid fa-envelope"></i> Contact</a>
             <a href="/profile"><i class="fa-solid fa-user"></i> Profile</a>
         </nav>
@@ -46,7 +53,7 @@
             </div>
             <div class="sidebar-actions">
                 <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
-                    title="Toggle Theme">
+                    title="Toggle theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
@@ -58,7 +65,7 @@
     </aside>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Mobile-only top bar -->
+    <!-- Mobile top bar -->
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
@@ -72,158 +79,332 @@
         </div>
     </nav>
 
-    <!-- Hero -->
-    <header class="hero" style="padding: 120px 0 60px 0;">
-        <div class="particles" id="particles"></div>
-        <div class="hero-content container">
-            <h1>Get In Touch</h1>
-            <p>We're here to help you with any queries about our emergency healthcare network and services.</p>
+    <!-- Redesigned Attractive & Compact Hero -->
+    <header class="ar-hero ar-hero--compact">
+        <div class="container">
+            <div class="ar-badge">
+                <i class="fa-solid fa-headset"></i>
+                Support & Healthcare Partnerships
+            </div>
+            <h1>Get in Touch With <span class="ar-gradient-text">Arogya Map</span></h1>
+            <p>Have questions about hospital listings, need technical support, or want to integrate your clinic? We're here to help.</p>
         </div>
     </header>
 
-    <main class="container" style="margin-top: 60px; padding-bottom: 60px;">
-        <div class="charts-grid" style="grid-template-columns: 1fr 1fr; align-items: stretch;">
+    <main class="container" id="main-content">
+        <div class="ar-contact-grid">
 
-            <!-- Contact Form -->
-            <section class="glass-card reveal">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 28px;">
-                    <div class="stat-icon teal"><i class="fa-solid fa-paper-plane"></i></div>
-                    <div>
-                        <h2>Send a Message</h2>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">We'll respond within 24 hours</p>
+            <!-- Left: Form Card -->
+            <section class="ar-form-card">
+                <h2><i class="fa-solid fa-paper-plane" style="color: var(--teal); margin-right: 8px;"></i> Send Us a Message</h2>
+                <p class="form-desc">Fill out the form below and we'll reply to your email address promptly.</p>
+
+                <form class="ar-form" id="contact-form" novalidate>
+                    <div class="ar-field" id="field-name">
+                        <label for="contact-name">Full Name</label>
+                        <input type="text" id="contact-name" name="name" autocomplete="name" required
+                            minlength="2" maxlength="100" placeholder="e.g. Dr. Rajesh Sharma">
+                        <span class="ar-field-error" id="error-name"></span>
                     </div>
-                </div>
-                <form id="contact-form" onsubmit="handleContact(event)">
-                    <div class="form-group">
-                        <label>Your Name</label>
-                        <input type="text" name="name" placeholder="John Doe" required>
+
+                    <div class="ar-field" id="field-email">
+                        <label for="contact-email">Email Address</label>
+                        <input type="email" id="contact-email" name="email" autocomplete="email" required
+                            maxlength="100" placeholder="name@example.com">
+                        <span class="ar-field-error" id="error-email"></span>
                     </div>
-                    <div class="form-group">
-                        <label>Email Address</label>
-                        <input type="email" name="email" placeholder="john@example.com" required>
+
+                    <div class="ar-field" id="field-topic">
+                        <label for="contact-topic">Topic of Inquiry</label>
+                        <select id="contact-topic" name="topic" required>
+                            <option value="general">General Question</option>
+                            <option value="hospital">List My Hospital or Clinic</option>
+                            <option value="bug">Report a Bug / Inaccurate Hospital Data</option>
+                            <option value="partnership">Healthcare Partnership / NGO</option>
+                            <option value="developer">Developer & API Integration</option>
+                        </select>
+                        <span class="ar-field-error" id="error-topic"></span>
                     </div>
-                    <div class="form-group">
-                        <label>Message</label>
-                        <textarea name="message" rows="5" placeholder="How can we help you?" required></textarea>
+
+                    <div class="ar-field" id="field-message">
+                        <label for="contact-message">Your Message</label>
+                        <textarea id="contact-message" name="message" rows="5" required
+                            minlength="10" maxlength="2000" placeholder="Please provide details about your inquiry, hospital name, or question..."></textarea>
+                        <span class="ar-char-count" id="char-count">0 / 2,000</span>
+                        <span class="ar-field-error" id="error-message"></span>
                     </div>
-                    <div class="flex" style="gap: 12px;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;" id="send-msg-btn">
-                            <i class="fa-solid fa-paper-plane"></i> Send Message
-                        </button>
-                        <button type="reset" class="btn btn-outline" style="flex: 1;">
-                            <i class="fa-solid fa-eraser"></i> Clear
-                        </button>
+
+                    <!-- Honeypot anti-spam -->
+                    <div class="ar-hp" aria-hidden="true">
+                        <label for="contact-website">Website</label>
+                        <input type="text" id="contact-website" name="website" tabindex="-1" autocomplete="off">
                     </div>
+
+                    <div aria-live="polite">
+                        <div class="ar-status" id="form-status"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="contact-submit-btn" style="margin-top: 10px; width: 100%;">
+                        <i class="fa-solid fa-paper-plane"></i> Send Inquiry
+                    </button>
                 </form>
             </section>
 
-            <!-- Contact Info -->
-            <section class="glass-card reveal reveal-delay-1"
-                style="display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h2 style="margin-bottom: 8px;">Contact Information</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 32px;">Feel free to reach out via email or
-                        phone for institutional partnerships or support.</p>
-
-                    <div class="contact-info-item">
-                        <div class="contact-icon stat-icon teal"><i class="fa-solid fa-envelope"></i></div>
-                        <div>
-                            <h4>Email Us</h4>
-                            <p style="color: var(--text-muted);">support@arogyamap.com</p>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-item">
-                        <div class="contact-icon stat-icon blue"><i class="fa-solid fa-phone"></i></div>
-                        <div>
-                            <h4>Call Us</h4>
-                            <p style="color: var(--text-muted);">+91 98765 43210</p>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-item">
-                        <div class="contact-icon stat-icon purple"><i class="fa-solid fa-location-dot"></i></div>
-                        <div>
-                            <h4>Office Location</h4>
-                            <p style="color: var(--text-muted);">Cyber City, Gurugram, India</p>
-                        </div>
-                    </div>
-
-                    <div class="contact-info-item">
-                        <div class="contact-icon stat-icon amber"><i class="fa-solid fa-clock"></i></div>
-                        <div>
-                            <h4>Working Hours</h4>
-                            <p style="color: var(--text-muted);">Mon - Fri: 9:00 AM - 6:00 PM IST</p>
-                        </div>
+            <!-- Right: Info, Emergency Callout & Expanded Questions -->
+            <section class="ar-contact-sidebar">
+                <!-- Emergency alert callout -->
+                <div class="ar-alert-box">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Not for immediate emergency response.</strong><br>
+                        If you or someone near you needs critical medical help right now, call <a href="tel:112" style="font-weight: 700; text-decoration: underline;">112</a> or ambulance at <a href="tel:108" style="font-weight: 700; text-decoration: underline;">108</a> immediately.
                     </div>
                 </div>
 
-                <!-- Map -->
-                <div id="contact-map"
-                    style="height: 200px; border-radius: var(--radius-sm); overflow: hidden; margin-top: 20px; border: 1px solid var(--border-color);">
+                <!-- Direct channels card (when configured) -->
+                {% if site.support_email or site.support_phone or site.location or site.hours %}
+                <div class="ar-contact-channels">
+                    <h3><i class="fa-solid fa-address-book" style="color: var(--teal);"></i> Direct Channels</h3>
+                    <ul class="ar-details-list">
+                        {% if site.support_email %}
+                        <li><i class="fa-solid fa-envelope"></i> <a href="mailto:{{ site.support_email }}">{{ site.support_email }}</a></li>
+                        {% endif %}
+                        {% if site.support_phone %}
+                        <li><i class="fa-solid fa-phone"></i> <a href="tel:{{ site.support_phone }}">{{ site.support_phone }}</a></li>
+                        {% endif %}
+                        {% if site.location %}
+                        <li><i class="fa-solid fa-location-dot"></i> {{ site.location }}</li>
+                        {% endif %}
+                        {% if site.hours %}
+                        <li><i class="fa-solid fa-clock"></i> {{ site.hours }}</li>
+                        {% endif %}
+                    </ul>
                 </div>
+                {% endif %}
+
+                <!-- Expanded FAQs Card (8 detailed questions about the app) -->
+                <div class="ar-faq-card">
+                    <h3><i class="fa-solid fa-circle-question" style="color: var(--teal);"></i> Frequently Asked Questions</h3>
+                    <p class="faq-intro">Common questions regarding hospital data, bed reservations, and platform usage.</p>
+
+                    <div class="ar-faq">
+                        <details open>
+                            <summary>How does Arogya Map find hospitals near me?</summary>
+                            <p>With your permission, Arogya Map uses your device's browser Geolocation API to find your precise coordinates, then queries OpenStreetMap Overpass servers to show all nearby hospitals and emergency trauma centers sorted by straight-line distance.</p>
+                        </details>
+
+                        <details>
+                            <summary>How is bed, ICU, and ventilator capacity updated?</summary>
+                            <p>Partner healthcare facilities log into the Arogya Map Hospital Portal to submit live capacity updates for General Beds, ICU units, and Ventilators. Facilities without a registered portal are shown as "Contact Hospital" with one-touch phone verification links.</p>
+                        </details>
+
+                        <details>
+                            <summary>How does the Emergency SOS priority system work?</summary>
+                            <p>When you trigger an Emergency SOS, you designate the urgency level: Low, Medium, High, or Critical. The dispatch queue prioritizes Critical cases first and automatically filters for hospitals equipped with functional ICU and ventilator beds.</p>
+                        </details>
+
+                        <details>
+                            <summary>Is Arogya Map a replacement for calling 108 or 112?</summary>
+                            <p>No. Arogya Map is a hospital availability finder and bed coordination platform. In any life-threatening situation, you should immediately call 112 (National Emergency) or 108 (Ambulance) so paramedics can be dispatched while you locate a receiving hospital.</p>
+                        </details>
+
+                        <details>
+                            <summary>How can my hospital or clinic get listed on Arogya Map?</summary>
+                            <p>Select "List My Hospital or Clinic" in the topic dropdown on this page. Provide your facility's registered name, address, and hospital administrator email. Our verification team will create your hospital management account with secure login credentials.</p>
+                        </details>
+
+                        <details>
+                            <summary>Is my patient information protected during an emergency?</summary>
+                            <p>Yes. Arogya Map only collects necessary triage details (urgency level, incident description, and location) needed by the dispatch coordinator and the receiving hospital to prepare your arrival. We never sell or share medical records with third parties.</p>
+                        </details>
+
+                        <details>
+                            <summary>What if a hospital's phone number or location is wrong?</summary>
+                            <p>You can help keep our community directory accurate! Choose "Report a Bug / Inaccurate Hospital Data" in the form above and mention the hospital name along with the corrected information. Our data pipeline updates records within 24 hours.</p>
+                        </details>
+
+                        <details>
+                            <summary>Is Arogya Map free to use for patients?</summary>
+                            <p>Yes, 100% free. Arogya Map is built as a public health technological utility to reduce emergency delays and save lives. There are zero fees or subscriptions for patients searching for care.</p>
+                        </details>
+                    </div>
+                </div>
+
             </section>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <h3><i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
-                        analytics.</p>
-                    <div class="social-links" style="margin-top: 20px;">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-github"></i></a>
-                    </div>
-                </div>
-                <div>
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="/hospitals">Find Hospital</a></li>
-                        <li><a href="/dashboard">Dashboard</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="/about">About Us</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Emergency FAQ</a></li>
-                    </ul>
+        <!-- Full-width Bottom Section: Fast-track Hospital Onboarding -->
+        <div class="ar-hospital-onboard-card">
+            <div class="ar-hospital-onboard-content">
+                <h3><i class="fa-solid fa-hospital-user" style="color: var(--teal); margin-right: 8px;"></i> Are You a Hospital Administrator or Clinic Manager?</h3>
+                <p>Join the Arogya Map emergency network. Broadcast your real-time bed, ICU, and oxygen availability to ambulances and families in need across your city.</p>
+                <div class="ar-onboard-steps">
+                    <span class="ar-onboard-pill"><i class="fa-solid fa-1"></i> Submit Details</span>
+                    <span class="ar-onboard-pill"><i class="fa-solid fa-2"></i> Fast Verification</span>
+                    <span class="ar-onboard-pill"><i class="fa-solid fa-3"></i> Real-time Dashboard Access</span>
                 </div>
             </div>
-            <div class="footer-bottom">
-                &copy; 2026 Arogya Map — Emergency Systems Redefined.
+            <div class="ar-hospital-onboard-action">
+                <button type="button" class="btn btn-primary" onclick="selectHospitalTopic()">
+                    <i class="fa-solid fa-plus-circle"></i> Onboard Your Facility
+                </button>
             </div>
         </div>
-    </footer>
+
+    </main>
+
+    {% include "_footer.html" %}
 
     <div id="toast" class="toast"></div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // Contact page map
-        document.addEventListener('DOMContentLoaded', () => {
-            const mapEl = document.getElementById('contact-map');
-            if (mapEl && typeof L !== 'undefined') {
-                const map = L.map('contact-map').setView([28.4414, 77.0425], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
-                L.marker([28.4414, 77.0425]).addTo(map)
-                    .bindPopup('<strong>Arogya Map HQ</strong><br>Cyber City, Gurugram')
-                    .openPopup();
+    (function () {
+        'use strict';
+
+        const TOPIC_MAP = { hospital: 'hospital', bug: 'bug', partnership: 'partnership' };
+
+        // Pre-select topic from ?topic= query param
+        const params = new URLSearchParams(window.location.search);
+        const topicParam = params.get('topic');
+        if (topicParam) {
+            const mapped = TOPIC_MAP[topicParam] || topicParam;
+            const sel = document.getElementById('contact-topic');
+            if (sel) {
+                for (const opt of sel.options) {
+                    if (opt.value === mapped) { sel.value = mapped; break; }
+                }
+            }
+        }
+
+        // Quick helper to select hospital topic and scroll up to form
+        window.selectHospitalTopic = function() {
+            const sel = document.getElementById('contact-topic');
+            if (sel) {
+                sel.value = 'hospital';
+            }
+            const form = document.getElementById('contact-form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const nameInput = document.getElementById('contact-name');
+                if (nameInput) nameInput.focus();
+            }
+        };
+
+        const form = document.getElementById('contact-form');
+        const submitBtn = document.getElementById('contact-submit-btn');
+        const statusBox = document.getElementById('form-status');
+        const charCount = document.getElementById('char-count');
+        const messageInput = document.getElementById('contact-message');
+
+        if (!form) return;
+
+        // Character counter
+        if (messageInput && charCount) {
+            const updateCount = () => {
+                const len = messageInput.value.length;
+                charCount.textContent = `${len.toLocaleString()} / 2,000`;
+                if (len > 2000) {
+                    charCount.classList.add('ar-over');
+                } else {
+                    charCount.classList.remove('ar-over');
+                }
+            };
+            messageInput.addEventListener('input', updateCount);
+            updateCount();
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.ar-field.ar-has-error').forEach(el => el.classList.remove('ar-has-error'));
+            document.querySelectorAll('.ar-field-error').forEach(el => { el.textContent = ''; });
+            if (statusBox) {
+                statusBox.className = 'ar-status';
+                statusBox.textContent = '';
+                statusBox.style.display = 'none';
+            }
+        }
+
+        function setFieldError(fieldName, msg) {
+            const field = document.getElementById(`field-${fieldName}`);
+            const err = document.getElementById(`error-${fieldName}`);
+            if (field) field.classList.add('ar-has-error');
+            if (err) err.textContent = msg;
+        }
+
+        function setStatus(type, msg) {
+            if (!statusBox) return;
+            statusBox.className = `ar-status ar-status--${type}`;
+            statusBox.textContent = msg;
+            statusBox.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            clearErrors();
+
+            const name = (document.getElementById('contact-name')?.value || '').trim();
+            const email = (document.getElementById('contact-email')?.value || '').trim();
+            const topic = (document.getElementById('contact-topic')?.value || '').trim();
+            const message = (document.getElementById('contact-message')?.value || '').trim();
+            const honeypot = (document.getElementById('contact-website')?.value || '').trim();
+
+            let hasClientError = false;
+
+            if (!name || name.length < 2) {
+                setFieldError('name', 'Please enter your name (at least 2 characters).');
+                hasClientError = true;
+            }
+            const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!email || !emailRe.test(email)) {
+                setFieldError('email', 'Please enter a valid email address.');
+                hasClientError = true;
+            }
+            if (!message || message.length < 10) {
+                setFieldError('message', 'Message must be at least 10 characters long.');
+                hasClientError = true;
+            } else if (message.length > 2000) {
+                setFieldError('message', 'Message cannot exceed 2,000 characters.');
+                hasClientError = true;
+            }
+
+            if (hasClientError) return;
+
+            // Submit
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending...';
+
+            try {
+                const res = await fetch('/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, subject: topic, message, website: honeypot })
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (res.ok && data.success) {
+                    setStatus('success', 'Thank you! Your message has been received. We will get back to you shortly.');
+                    form.reset();
+                    if (charCount) charCount.textContent = '0 / 2,000';
+                } else if (data.errors) {
+                    Object.keys(data.errors).forEach(key => {
+                        if (['name', 'email', 'topic', 'message'].includes(key)) {
+                            setFieldError(key, data.errors[key]);
+                        } else {
+                            setStatus('error', data.errors[key]);
+                        }
+                    });
+                } else {
+                    setStatus('error', data.message || 'Something went wrong. Please try again.');
+                }
+            } catch (err) {
+                setStatus('error', 'Network error. Please check your connection and try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
             }
         });
+    })();
     </script>
 </body>
 

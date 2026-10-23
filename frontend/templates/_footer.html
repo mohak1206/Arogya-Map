@@ -1,0 +1,57 @@
+{# Shared footer partial — include via: {% include "_footer.html" %} #}
+<footer class="footer" role="contentinfo">
+    <div class="container">
+        <div class="footer-grid">
+            <!-- Brand -->
+            <div>
+                <h3><i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> {{ site.name }}</h3>
+                <p style="margin-top: 12px;">Find nearby hospitals, check bed availability and send emergency requests.</p>
+                {% if site.social.github or site.social.linkedin or site.social.twitter %}
+                <div class="social-links" style="margin-top: 20px;">
+                    {% if site.social.github %}
+                    <a href="{{ site.social.github }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                    {% endif %}
+                    {% if site.social.linkedin %}
+                    <a href="{{ site.social.linkedin }}" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    {% endif %}
+                    {% if site.social.twitter %}
+                    <a href="{{ site.social.twitter }}" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Product -->
+            <div>
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="/hospitals">Find hospitals</a></li>
+                    <li><a href="/emergency">Emergency request</a></li>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                </ul>
+            </div>
+
+            <!-- Company -->
+            <div>
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </div>
+
+            <!-- In an emergency -->
+            <div>
+                <h4>In an emergency</h4>
+                <ul>
+                    <li><a href="tel:112"><i class="fa-solid fa-phone" style="color: var(--rose); margin-right: 6px;"></i>Call 112</a></li>
+                    <li><a href="tel:108"><i class="fa-solid fa-truck-medical" style="color: var(--rose); margin-right: 6px;"></i>Ambulance 108</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            &copy; {{ site.year }} {{ site.name }}. Arogya Map does not replace emergency services or medical advice.
+        </div>
+    </div>
+</footer>

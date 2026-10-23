@@ -5,13 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Learn about Arogya Map — our mission to revolutionize emergency healthcare with AI-powered hospital management.">
-    <title>Arogya Map | About Us</title>
+        content="Arogya Map shows nearby hospitals on a map with real-time bed and ICU availability, priority emergency SOS dispatch, and health tracking.">
+    <title>About — {{ site.name }}</title>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="About — {{ site.name }}">
+    <meta property="og:description"
+        content="Find nearby hospitals, check bed and ICU availability in real time, and dispatch emergency requests.">
+    <meta property="og:type" content="website">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 
 <body class="has-sidebar">
+    <a href="#main-content" class="ar-skip-link">Skip to content</a>
     <div class="bg-mesh"></div>
 
     <!-- Sidebar -->
@@ -23,14 +32,14 @@
             </a>
             <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
         </div>
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" aria-label="Main navigation">
             <div class="sidebar-nav-label">Main</div>
             <a href="/dashboard"><i class="fa-solid fa-table-cells-large"></i> Dashboard</a>
             <a href="/hospitals"><i class="fa-solid fa-hospital"></i> Find Hospital</a>
             <a href="/emergency" class="emergency-link"><i class="fa-solid fa-phone-volume"></i> Emergency SOS</a>
 
             <div class="sidebar-nav-label" style="margin-top: 12px;">More</div>
-            <a href="/about" class="active"><i class="fa-solid fa-circle-info"></i> About Us</a>
+            <a href="/about" class="active"><i class="fa-solid fa-circle-info"></i> About</a>
             <a href="/contact"><i class="fa-solid fa-envelope"></i> Contact</a>
             <a href="/profile"><i class="fa-solid fa-user"></i> Profile</a>
         </nav>
@@ -44,7 +53,7 @@
             </div>
             <div class="sidebar-actions">
                 <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn"
-                    title="Toggle Theme">
+                    title="Toggle theme">
                     <i class="fas fa-sun"></i> Theme
                 </button>
                 <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn"
@@ -56,7 +65,7 @@
     </aside>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-    <!-- Mobile-only top bar -->
+    <!-- Mobile top bar -->
     <nav class="navbar" id="navbar">
         <div class="container nav-container" style="height: 56px;">
             <button class="sidebar-toggle" onclick="toggleSidebar()" title="Menu">
@@ -70,207 +79,368 @@
         </div>
     </nav>
 
-    <!-- Hero -->
-    <header class="hero" style="padding: 120px 0 80px 0;">
-        <div class="particles" id="particles"></div>
-        <div class="hero-content container">
-            <h1>Our Mission</h1>
-            <p>Bridging the gap between emergency medical needs and real-time hospital resource availability using
-                cutting-edge algorithms.</p>
+    <!-- Emergency strip -->
+    <div class="ar-emergency-strip" role="alert">
+        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>
+        In an immediate life-threatening emergency, call <a href="tel:112">112</a> (National Emergency) or <a href="tel:108">108</a> (Ambulance) first.
+    </div>
+
+    <!-- Redesigned Attractive & Compact Hero -->
+    <header class="ar-hero">
+        <div class="container">
+            <div class="ar-badge">
+                <i class="fa-solid fa-shield-heart"></i>
+                Smart Emergency Healthcare Platform
+            </div>
+            <h1>Know Which Hospital Has a Bed <span class="ar-gradient-text">Before You Leave Home.</span></h1>
+            <p>Arogya Map locates nearby hospitals and clinics, tracks verified bed and ICU capacity, and coordinates priority emergency requests during critical moments.</p>
+            <div class="ar-hero-actions">
+                <a href="/hospitals" class="btn-hero-primary">
+                    <i class="fa-solid fa-location-crosshairs"></i> Find Hospitals Nearby
+                </a>
+                <a href="/emergency" class="btn-hero-glass">
+                    <i class="fa-solid fa-phone-volume" style="color: var(--rose);"></i> Emergency SOS
+                </a>
+            </div>
         </div>
     </header>
 
-    <main class="container" style="margin-top: 60px;">
+    <main class="container" id="main-content">
 
-        <!-- Features -->
-        <section class="grid reveal" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-            <div class="glass-card feature-card reveal">
-                <div class="feature-icon stat-icon teal">
-                    <i class="fa-solid fa-map-location-dot"></i>
+        <!-- Platform Impact Metrics (4-column bar) -->
+        <div class="ar-stats-row">
+            <div class="ar-stat-item">
+                <div class="ar-stat-icon teal"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div>
+                    <div class="ar-stat-number">Overpass API</div>
+                    <div class="ar-stat-label">OpenStreetMap Real-time Geo</div>
                 </div>
-                <h3>Smart Hospital Finding</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);">Using the <strong>Haversine formula</strong>
-                    to calculate the mathematically shortest path to the closest hospital from your current GPS
-                    coordinates.</p>
             </div>
-
-            <div class="glass-card feature-card reveal reveal-delay-1">
-                <div class="feature-icon stat-icon blue">
-                    <i class="fa-solid fa-truck-medical"></i>
+            <div class="ar-stat-item">
+                <div class="ar-stat-icon blue"><i class="fa-solid fa-bed-pulse"></i></div>
+                <div>
+                    <div class="ar-stat-number">Live Tracking</div>
+                    <div class="ar-stat-label">General, ICU & Ventilators</div>
                 </div>
-                <h3>Emergency Routing</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);"><strong>Priority Queue</strong> based
-                    scheduling ensures critical patients are assigned to hospitals with the most available resources
-                    first.</p>
             </div>
-
-            <div class="glass-card feature-card reveal reveal-delay-2">
-                <div class="feature-icon stat-icon purple">
-                    <i class="fa-solid fa-shield-heart"></i>
+            <div class="ar-stat-item">
+                <div class="ar-stat-icon rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <div class="ar-stat-number">4 Triage Tiers</div>
+                    <div class="ar-stat-label">Priority Emergency Queue</div>
                 </div>
-                <h3>AI Wellness Analytics</h3>
-                <p style="margin-top: 14px; color: var(--text-secondary);">Personalized health tracking with
-                    <strong>Chart.js</strong> visualizations and AI-driven insights to prevent emergencies before they
-                    happen.</p>
             </div>
-        </section>
+            <div class="ar-stat-item">
+                <div class="ar-stat-icon purple"><i class="fa-solid fa-shield-halved"></i></div>
+                <div>
+                    <div class="ar-stat-number">ACID Safe</div>
+                    <div class="ar-stat-label">Atomic Bed Reservations</div>
+                </div>
+            </div>
+        </div>
 
-        <!-- Algorithms Section -->
-        <section style="margin-top: 100px;" class="reveal">
-            <div style="text-align: center; margin-bottom: 50px;">
-                <h2 class="section-title">Algorithms & Concepts</h2>
-                <p class="section-subtitle">The computer science behind Arogya Map</p>
+        <!-- Core Capabilities (3-column responsive card grid) -->
+        <section class="ar-section">
+            <div class="ar-section-header">
+                <h2 class="ar-section-title"><i class="fa-solid fa-layer-group"></i> Everything You Can Do With Arogya Map</h2>
+                <p class="ar-section-subtitle">Designed to eliminate hospital-to-hospital wandering and save critical minutes during the golden hour.</p>
             </div>
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                <div class="glass-card reveal" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon teal"
-                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
-                        <i class="fa-solid fa-route"></i>
+
+            <div class="ar-features-grid">
+                <!-- Card 1 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon teal"><i class="fa-solid fa-map-location-dot"></i></div>
+                        <h3>Nearby Facility Discovery</h3>
                     </div>
-                    <h4>Haversine Distance</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Great-circle distance
-                        between two GPS coordinates for shortest path calculations.</p>
+                    <p>Uses your browser's geolocation to query OpenStreetMap Overpass servers. Lists hospitals and trauma clinics sorted by driving and direct distance.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-compass"></i> Live Geolocation</span>
                 </div>
-                <div class="glass-card reveal reveal-delay-1" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon rose"
-                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
-                        <i class="fa-solid fa-list-ol"></i>
-                    </div>
-                    <h4>Priority Queue</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Sorting patients by
-                        severity: Critical > High > Medium > Low for optimal assignment.</p>
-                </div>
-                <div class="glass-card reveal reveal-delay-2" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon amber"
-                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
-                        <i class="fa-solid fa-hand-holding-medical"></i>
-                    </div>
-                    <h4>Greedy Allocation</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">Assigning hospitals with
-                        the maximum available resources weighted by proximity.</p>
-                </div>
-                <div class="glass-card reveal reveal-delay-3" style="text-align: center; padding: 32px;">
-                    <div class="stat-icon blue"
-                        style="margin: 0 auto 16px auto; width: 56px; height: 56px; font-size: 1.4rem;">
-                        <i class="fa-solid fa-lock"></i>
-                    </div>
-                    <h4>Deadlock Prevention</h4>
-                    <p style="font-size: 0.85rem; margin-top: 10px; color: var(--text-muted);">MySQL Transactions
-                        (BEGIN, COMMIT, ROLLBACK) for safe concurrent bed booking.</p>
-                </div>
-            </div>
-        </section>
 
-        <!-- How It Works -->
-        <section style="margin-top: 100px; text-align: center;" class="reveal">
-            <h2 class="section-title">How Arogya Map Works</h2>
-            <p class="section-subtitle">Three simple steps to emergency care</p>
-            <div class="flex" style="justify-content: center; flex-wrap: wrap; gap: 48px; margin-top: 20px;">
-                <div style="max-width: 250px;" class="reveal">
-                    <div class="step-number">1</div>
-                    <h4>Register Account</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Create a secure profile
-                        with your medical history and location details.</p>
+                <!-- Card 2 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon blue"><i class="fa-solid fa-bed-pulse"></i></div>
+                        <h3>Real-time Bed & ICU Status</h3>
+                    </div>
+                    <p>Transparent visibility into available General beds, ICU units, and ventilator-equipped life support facilities updated by partner hospitals.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-circle-check"></i> Verified Counts</span>
                 </div>
-                <div style="max-width: 250px;" class="reveal reveal-delay-1">
-                    <div class="step-number">2</div>
-                    <h4>Find Resources</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Search for ICU beds,
-                        ventilators, or general availability across your city in real-time.</p>
+
+                <!-- Card 3 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon rose"><i class="fa-solid fa-phone-volume"></i></div>
+                        <h3>Priority Emergency SOS</h3>
+                    </div>
+                    <p>Send an emergency alert with structured triage priority (Low, Medium, High, Critical). Immediately places the patient into the dispatch queue.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-bolt"></i> Instant Dispatch</span>
                 </div>
-                <div style="max-width: 250px;" class="reveal reveal-delay-2">
-                    <div class="step-number">3</div>
-                    <h4>Get Help Fast</h4>
-                    <p style="font-size: 0.875rem; color: var(--text-muted); margin-top: 10px;">Click SOS to trigger
-                        intelligent routing and secure an emergency hospital booking.</p>
+
+                <!-- Card 4 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon emerald"><i class="fa-solid fa-lock"></i></div>
+                        <h3>Atomic Bed Reservation</h3>
+                    </div>
+                    <p>When a dispatcher assigns a patient, the system holds the bed in a single ACID database transaction to prevent double-booking of scarce beds.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-database"></i> Zero Race Conditions</span>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon amber"><i class="fa-solid fa-phone-flip"></i></div>
+                        <h3>Integrated Emergency Dialing</h3>
+                    </div>
+                    <p>Direct telephony integration with national and regional emergency lines (112 National Police/Medical and 108 Ambulance) with one tap.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-tower-broadcast"></i> 112 & 108 Ready</span>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="ar-feature-card">
+                    <div class="ar-card-header">
+                        <div class="ar-card-icon purple"><i class="fa-solid fa-chart-line"></i></div>
+                        <h3>Daily Health & Wellness Tracking</h3>
+                    </div>
+                    <p>Log your sleep, daily steps, screen time, and stress metrics. View 7-day health trend analytics with personalized lifestyle guidance.</p>
+                    <span class="ar-card-tag"><i class="fa-solid fa-heart-pulse"></i> Preventative Care</span>
                 </div>
             </div>
         </section>
 
-        <!-- Team -->
-        <section style="margin-top: 100px; padding-bottom: 60px;" class="reveal">
-            <div style="text-align: center; margin-bottom: 50px;">
-                <h2 class="section-title">Our Expert Team</h2>
-                <p class="section-subtitle">The minds behind Arogya Map</p>
+        <!-- Emergency Workflow: Stepper on Left + Live Simulation Console on Right -->
+        <section class="ar-section">
+            <div class="ar-section-header">
+                <h2 class="ar-section-title"><i class="fa-solid fa-route"></i> How Emergency Dispatch Works</h2>
+                <p class="ar-section-subtitle">A transparent, reliable 5-step pipeline that connects patients to emergency beds without friction.</p>
             </div>
-            <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px;">
-                <div class="glass-card reveal" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar">SC</div>
-                    <h4>Dr. Sarah Chen</h4>
-                    <p style="font-size: 0.825rem; color: var(--teal); font-weight: 600;">Medical Director</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">15+ years in emergency
-                        medicine</p>
-                </div>
-                <div class="glass-card reveal reveal-delay-1" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--blue), var(--purple));">DM
+
+            <div class="ar-split-grid">
+                <!-- Left: 5-step interactive timeline -->
+                <ol class="ar-stepper">
+                    <li>
+                        <span class="ar-step-num">1</span>
+                        <div class="ar-step-body">
+                            <h4>Incident Triage</h4>
+                            <p>You select the urgency level (Low, Medium, High, or Critical) and provide a concise summary of symptoms or injuries.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ar-step-num">2</span>
+                        <div class="ar-step-body">
+                            <h4>Intelligent Queue Placement</h4>
+                            <p>The request joins the live dispatch queue, sorted strictly by triage priority first and arrival timestamp second.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ar-step-num">3</span>
+                        <div class="ar-step-body">
+                            <h4>Dispatcher Match & Bed Allocation</h4>
+                            <p>Coordinators match the patient with the closest available hospital that has confirmed General or ICU bed availability.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ar-step-num">4</span>
+                        <div class="ar-step-body">
+                            <h4>Transactional Bed Lock</h4>
+                            <p>The allocated bed is locked inside a transactional database commit so no two patients can claim the same remaining bed.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="ar-step-num">5</span>
+                        <div class="ar-step-body">
+                            <h4>En Route & Admission Confirmation</h4>
+                            <p>Status transitions from <code>Pending</code> to <code>Assigned</code> to <code>Completed</code> once the hospital receives the patient.</p>
+                        </div>
+                    </li>
+                </ol>
+
+                <!-- Right: Interactive Live Dispatch Simulation Console -->
+                <div class="ar-sim-card">
+                    <div class="ar-sim-header">
+                        <div class="ar-sim-title">
+                            <i class="fa-solid fa-tower-broadcast" style="color: var(--teal);"></i>
+                            Live Dispatch Pipeline Demo
+                        </div>
+                        <span class="ar-sim-live-badge">Simulated Feed</span>
                     </div>
-                    <h4>David Miller</h4>
-                    <p style="font-size: 0.825rem; color: var(--blue); font-weight: 600;">Head of AI Systems</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">ML & algorithm specialist
+
+                    <div class="ar-sim-items-wrapper">
+                        <div class="ar-sim-item">
+                            <div>
+                                <div class="ar-sim-item-title">Active Emergency Incident</div>
+                                <div class="ar-sim-item-value">#SOS-7429 • Trauma Triage</div>
+                            </div>
+                            <span style="color: var(--rose); font-weight: 700; font-size: 0.85rem;">
+                                <i class="fa-solid fa-circle-exclamation"></i> CRITICAL
+                            </span>
+                        </div>
+
+                        <div class="ar-sim-item">
+                            <div>
+                                <div class="ar-sim-item-title">Assigned Medical Center</div>
+                                <div class="ar-sim-item-value">City Trauma & Multispecialty</div>
+                            </div>
+                            <span style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 600;">
+                                <i class="fa-solid fa-location-arrow" style="color: var(--teal);"></i> 2.4 km
+                            </span>
+                        </div>
+
+                        <div class="ar-sim-item">
+                            <div>
+                                <div class="ar-sim-item-title">Reserved Hospital Capacity</div>
+                                <div class="ar-sim-item-value">1x ICU Bed • 1x Ventilator</div>
+                            </div>
+                            <span class="ar-sim-lock">
+                                <i class="fa-solid fa-lock"></i> ACID Locked
+                            </span>
+                        </div>
+
+                        <div class="ar-sim-item">
+                            <div>
+                                <div class="ar-sim-item-title">Incident Status</div>
+                                <div class="ar-sim-item-value" style="color: var(--teal);">ASSIGNED — En Route</div>
+                            </div>
+                            <span style="font-size: 0.82rem; color: var(--text-secondary);">
+                                ETA: 6 mins
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="ar-sim-footer">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Guarantees that a bed is ready and staffed before the patient physically arrives at the ER.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- For Healthcare Providers & Dispatch Teams (2-column balanced) -->
+        <section class="ar-section">
+            <div class="ar-section-header">
+                <h2 class="ar-section-title"><i class="fa-solid fa-hospital-user"></i> Built for Both Patients and Healthcare Staff</h2>
+                <p class="ar-section-subtitle">Bridging the critical communication gap between families in distress and emergency care facilities.</p>
+            </div>
+
+            <div class="ar-two-col">
+                <div class="ar-col-card">
+                    <h3><i class="fa-solid fa-hospital" style="color: var(--teal); margin-right: 10px;"></i> For Hospitals & Clinics</h3>
+                    <p>Keep your facility's bed, ICU, and ventilator availability updated in real-time to streamline patient intake and prevent emergency ward chaos.</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> Update bed and ventilator counts in seconds.</li>
+                        <li><i class="fa-solid fa-check"></i> Receive advance notice for incoming critical patients.</li>
+                        <li><i class="fa-solid fa-check"></i> Zero software installation needed — accessible on any web browser.</li>
+                    </ul>
+                    <a href="/contact?topic=hospital" class="ar-btn-link">
+                        List Your Facility on Arogya Map <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="ar-col-card">
+                    <h3><i class="fa-solid fa-headset" style="color: var(--blue); margin-right: 10px;"></i> For Emergency Coordinators</h3>
+                    <p>An administrative triage dashboard displaying live requests ordered by priority, distance, and bed availability across all regional partners.</p>
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> Automated priority triage (Low, Medium, High, Critical).</li>
+                        <li><i class="fa-solid fa-check"></i> One-click hospital bed assignment with transaction locks.</li>
+                        <li><i class="fa-solid fa-check"></i> Comprehensive reporting on regional emergency response times.</li>
+                    </ul>
+                    <a href="/dashboard" class="ar-btn-link">
+                        Explore Dispatch System <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Safety & Data Freshness Disclaimer (Balanced 2-column) -->
+        <section class="ar-section">
+            <div class="ar-caveat-card">
+                <div class="ar-caveat-header">
+                    <i class="fa-solid fa-shield-virus" style="color: var(--rose); font-size: 1.25rem;"></i>
+                    <h3>What to Know Before You Rely on It</h3>
+                </div>
+                <div class="ar-caveat-grid">
+                    <div class="ar-caveat-point">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <div>
+                            <strong>Data Freshness:</strong> Bed counts reflect the hospital's latest recorded update. When time allows, always call the hospital using the direct dial link to confirm admission readiness.
+                        </div>
+                    </div>
+                    <div class="ar-caveat-point">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <div>
+                            <strong>Emergency Services:</strong> Arogya Map coordinates hospital availability but does not replace official national ambulance dispatch (call 112 or 108 first).
+                        </div>
+                    </div>
+                    <div class="ar-caveat-point">
+                        <i class="fa-solid fa-map-pin"></i>
+                        <div>
+                            <strong>Distance Calculations:</strong> Geospatial distances are calculated using coordinates from OpenStreetMap and may differ from road traffic conditions.
+                        </div>
+                    </div>
+                    <div class="ar-caveat-point">
+                        <i class="fa-solid fa-user-doctor"></i>
+                        <div>
+                            <strong>Medical Advice Disclaimer:</strong> Daily wellness suggestions and triage descriptions are informational and never substitute for licensed professional medical consultation.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Builder Card: Mohak Agrawal -->
+        <section class="ar-section">
+            <div class="ar-section-header">
+                <h2 class="ar-section-title"><i class="fa-solid fa-code"></i> Who Builds Arogya Map</h2>
+                <p class="ar-section-subtitle">Open public health technology engineered with transparent data and accessible infrastructure.</p>
+            </div>
+
+            <div class="ar-builder-card">
+                <div class="ar-builder-avatar">
+                    MA
+                </div>
+                <div class="ar-builder-info">
+                    <div class="ar-builder-name">Mohak Agrawal</div>
+                    <div class="ar-builder-role">Developer & Creator of Arogya Map</div>
+                    <p class="ar-builder-bio">
+                        Arogya Map was designed and engineered by Mohak Agrawal to solve the real-world challenge of hospital bed transparency during medical emergencies. Built using OpenStreetMap, Python Flask, and modern web technologies, the platform focuses on speed, reliability, and human dignity during life-saving moments.
                     </p>
-                </div>
-                <div class="glass-card reveal reveal-delay-2" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--purple), var(--rose));">EP
+                    <div class="ar-builder-links">
+                        {% if site.social.github %}
+                        <a href="{{ site.social.github }}" target="_blank" rel="noopener noreferrer">
+                            <i class="fa-brands fa-github"></i> GitHub
+                        </a>
+                        {% endif %}
+                        {% if site.social.linkedin %}
+                        <a href="{{ site.social.linkedin }}" target="_blank" rel="noopener noreferrer">
+                            <i class="fa-brands fa-linkedin"></i> LinkedIn
+                        </a>
+                        {% endif %}
+                        <a href="/contact">
+                            <i class="fa-solid fa-envelope"></i> Contact Mohak
+                        </a>
                     </div>
-                    <h4>Elena Petrova</h4>
-                    <p style="font-size: 0.825rem; color: var(--purple); font-weight: 600;">Lead Hospital Ops</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Hospital logistics expert
-                    </p>
-                </div>
-                <div class="glass-card reveal reveal-delay-3" style="text-align: center; padding: 32px;">
-                    <div class="team-avatar" style="background: linear-gradient(135deg, var(--amber), var(--rose));">MA
-                    </div>
-                    <h4>Mohak Agrawal</h4>
-                    <p style="font-size: 0.825rem; color: var(--amber); font-weight: 600;">Full-Stack Developer</p>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">Flask & frontend architect
-                    </p>
                 </div>
             </div>
         </section>
+
+        <!-- Final Call to Action Banner -->
+        <div class="ar-cta-banner">
+            <h3>Ready to Explore Healthcare Services Near You?</h3>
+            <p>Access our live hospital map, check bed capacity, or set up your personal health dashboard in seconds.</p>
+            <div class="ar-cta-row">
+                <a href="/hospitals" class="btn btn-primary">
+                    <i class="fa-solid fa-magnifying-glass-location"></i> Find Hospitals
+                </a>
+                <a href="/contact" class="btn btn-outline">
+                    <i class="fa-solid fa-paper-plane"></i> Contact Team
+                </a>
+            </div>
+        </div>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <h3><i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
-                        analytics.</p>
-                    <div class="social-links" style="margin-top: 20px;">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-github"></i></a>
-                    </div>
-                </div>
-                <div>
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="/hospitals">Find Hospital</a></li>
-                        <li><a href="/dashboard">Dashboard</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="/about">About Us</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Emergency FAQ</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                &copy; 2026 Arogya Map — Emergency Systems Redefined.
-            </div>
-        </div>
-    </footer>
+    {% include "_footer.html" %}
 
     <div id="toast" class="toast"></div>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

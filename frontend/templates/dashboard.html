@@ -207,50 +207,8 @@
 
     </main>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div>
-                    <h3><i class="fa-solid fa-heart-pulse" style="color: var(--teal);"></i> Arogya Map</h3>
-                    <p style="margin-top: 12px;">Smart Healthcare management system powered by AI and real-time data
-                        analytics for emergency response.</p>
-                    <div class="social-links" style="margin-top: 20px;">
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-linkedin"></i></a>
-                        <a href="#"><i class="fab fa-github"></i></a>
-                    </div>
-                </div>
-                <div>
-                    <h4>Product</h4>
-                    <ul>
-                        <li><a href="/hospitals">Find Hospital</a></li>
-                        <li><a href="/dashboard">Dashboard</a></li>
-                        <li><a href="#emergency">Emergency SOS</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Company</h4>
-                    <ul>
-                        <li><a href="/about">About Us</a></li>
-                        <li><a href="/contact">Contact</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4>Support</h4>
-                    <ul>
-                        <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Emergency FAQ</a></li>
-                        <li><a href="#">API Docs</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                &copy; 2026 Arogya Map — All Rights Reserved. Built with Flask, JavaScript & AI.
-            </div>
-        </div>
-    </footer>
+    {% include "_footer.html" %}
+
 
     <!-- Stress Modal -->
     <div id="stressModal" class="modal-overlay">
