@@ -124,7 +124,7 @@ async function checkSession() {
     // If on protected pages, redirect
     const path = window.location.pathname;
     if (path === '/dashboard' || path === '/hospitals') {
-      window.location.href = '/';
+      window.location.href = '/login';
     }
   }
 }
@@ -172,7 +172,7 @@ async function handleSignup(e) {
   try {
     await apiFetch('/register', { method: 'POST', body: JSON.stringify(body) });
     showToast('Account created! Redirecting to login...');
-    setTimeout(() => window.location.href = '/', 2000);
+    setTimeout(() => window.location.href = '/login', 2000);
   } catch (err) {
     if (btn) btn.disabled = false;
   }
