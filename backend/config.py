@@ -32,6 +32,9 @@ class Config:
     # Session config
     SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = False
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = not (os.getenv('FLASK_DEBUG', 'True').lower() in ('true', '1', 't'))
 
     # Server config
     FLASK_PORT = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))

@@ -79,12 +79,52 @@ function showToast(message, type = 'success') {
 }
 
 // ═══════════════════════════════════════════════════════════
+// FRESHNESS CALCULATION HELPER
+// ═══════════════════════════════════════════════════════════
+function getFreshnessInfo(bedsUpdatedAt) {
+  if (!bedsUpdatedAt) {
+    return { isOutdated: true, label: 'Counts may be outdated, call to confirm' };
+  }
+  const updatedTime = new Date(bedsUpdatedAt).getTime();
+  if (isNaN(updatedTime)) {
+    return { isOutdated: true, label: 'Counts may be outdated, call to confirm' };
+  }
+  const diffMs = Date.now() - updatedTime;
+  if (diffMs < 0) {
+    return { isOutdated: false, label: 'Updated just now' };
+  }
+  const diffMins = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+  if (diffHours >= 24) {
+    return { isOutdated: true, label: 'Counts may be outdated, call to confirm' };
+  }
+  if (diffMins < 1) {
+    return { isOutdated: false, label: 'Updated just now' };
+  }
+  if (diffMins < 60) {
+    return { isOutdated: false, label: `Updated ${diffMins} min ago` };
+  }
+  return { isOutdated: false, label: `Updated ${diffHours} hr${diffHours > 1 ? 's' : ''} ago` };
+}
+
+// ═══════════════════════════════════════════════════════════
 // API FETCH WRAPPER
 // ═══════════════════════════════════════════════════════════
 async function apiFetch(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;
+  const method = (options.method || 'GET').toUpperCase();
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+
+  // Attach CSRF token on state-changing calls
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) {
+      headers['X-CSRF-Token'] = meta.content;
+    }
+  }
+
   const defaultOptions = {
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     ...options
   };
 
@@ -143,17 +183,27 @@ async function handleLogin(e) {
   try {
     const data = await apiFetch('/login', { method: 'POST', body: JSON.stringify(body) });
     showToast('Login successful! Redirecting...');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const nextUrl = urlParams.get('next');
+    const isSafeNext = nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//');
+
     setTimeout(() => {
-      if (data.user && data.user.role === 'admin') {
+      if (isSafeNext) {
+        window.location.href = nextUrl;
+      } else if (data.user && data.user.role === 'admin') {
         window.location.href = '/admin/dashboard';
+      } else if (data.user && data.user.role === 'hospital') {
+        window.location.href = '/hospital/dashboard';
       } else {
         window.location.href = '/dashboard';
       }
-    }, 1000);
+    }, 800);
   } catch (err) {
     if (btn) btn.disabled = false;
   }
 }
+
 
 async function handleSignup(e) {
   e.preventDefault();
@@ -789,31 +839,46 @@ function applyFilterAndRender() {
         ${h.speciality ? `<span class="badge badge-speciality" style="margin-left: 8px;">${h.speciality}</span>` : ''}
       </div>
 
-      ${isPartner ? `
-        <div class="hospital-stats">
-          <div class="hospital-stat">
-            <div class="stat-num" style="color: ${isAvailable ? 'var(--emerald)' : 'var(--rose)'};">${h.available_beds || 0}</div>
-            <div class="stat-lbl">Available Beds</div>
+      ${isPartner ? (() => {
+        const freshness = getFreshnessInfo(h.beds_updated_at);
+        if (freshness.isOutdated) {
+          return `
+            <div style="background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.85rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>Counts may be outdated, call to confirm</span>
+            </div>
+          `;
+        }
+        return `
+          <div class="hospital-stats">
+            <div class="hospital-stat">
+              <div class="stat-num" style="color: ${isAvailable ? 'var(--emerald)' : 'var(--rose)'};">${h.available_beds || 0}</div>
+              <div class="stat-lbl">Available Beds</div>
+            </div>
+            <div class="hospital-stat">
+              <div class="stat-num" style="color: var(--blue);">${h.available_icu || 0}</div>
+              <div class="stat-lbl">ICU Beds</div>
+            </div>
+            <div class="hospital-stat">
+              <div class="stat-num" style="color: var(--purple);">${h.available_ventilators || 0}</div>
+              <div class="stat-lbl">Ventilators</div>
+            </div>
           </div>
-          <div class="hospital-stat">
-            <div class="stat-num" style="color: var(--blue);">${h.available_icu || 0}</div>
-            <div class="stat-lbl">ICU Beds</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: -6px; margin-bottom: 10px; display: flex; align-items: center; gap: 4px;">
+            <i class="fa-solid fa-clock-rotate-left" style="color: var(--teal); font-size: 0.7rem;"></i>
+            <span>${freshness.label}</span>
           </div>
-          <div class="hospital-stat">
-            <div class="stat-num" style="color: var(--purple);">${h.available_ventilators || 0}</div>
-            <div class="stat-lbl">Ventilators</div>
+          <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
+              <span style="color: var(--text-muted);">Capacity Occupancy</span>
+              <span style="font-weight: 600;">${occupancy}%</span>
+            </div>
+            <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
+              <div style="height: 100%; width: ${occupancy}%; background: ${occupancy > 80 ? 'var(--rose)' : occupancy > 50 ? 'var(--amber)' : 'var(--emerald)'}; border-radius: 3px; transition: width 0.5s ease;"></div>
+            </div>
           </div>
-        </div>
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 4px;">
-            <span style="color: var(--text-muted);">Capacity Occupancy</span>
-            <span style="font-weight: 600;">${occupancy}%</span>
-          </div>
-          <div style="height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;">
-            <div style="height: 100%; width: ${occupancy}%; background: ${occupancy > 80 ? 'var(--rose)' : occupancy > 50 ? 'var(--amber)' : 'var(--emerald)'}; border-radius: 3px; transition: width 0.5s ease;"></div>
-          </div>
-        </div>
-      ` : `
+        `;
+      })() : `
         <div class="osm-unconnected-card">
           <i class="fa-solid fa-circle-info" style="color: var(--blue); font-size: 1.1rem; flex-shrink: 0;"></i>
           <div>Not connected to bed system · Bed data unavailable, please call before arrival.</div>
@@ -880,11 +945,21 @@ function updateLayerMarkers(facilities) {
 
     let bedBadgeHtml = '';
     if (isPartner) {
-      bedBadgeHtml = `
-        <div style="background: rgba(0, 212, 170, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; border: 1px solid rgba(0, 212, 170, 0.25);">
-          <div>🛏️ Live Beds: <strong>${item.available_beds}/${item.total_beds}</strong> · ICU: <strong>${item.available_icu}</strong> · Vent: <strong>${item.available_ventilators}</strong></div>
-        </div>
-      `;
+      const freshness = getFreshnessInfo(item.beds_updated_at);
+      if (freshness.isOutdated) {
+        bedBadgeHtml = `
+          <div style="background: rgba(234, 179, 8, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; color: #f59e0b; border: 1px solid rgba(234, 179, 8, 0.3);">
+            <i class="fa-solid fa-triangle-exclamation"></i> Counts may be outdated, call to confirm
+          </div>
+        `;
+      } else {
+        bedBadgeHtml = `
+          <div style="background: rgba(0, 212, 170, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; border: 1px solid rgba(0, 212, 170, 0.25);">
+            <div>🛏️ Live Beds: <strong>${item.available_beds}/${item.total_beds}</strong> · ICU: <strong>${item.available_icu}</strong> · Vent: <strong>${item.available_ventilators}</strong></div>
+            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 3px;"><i class="fa-solid fa-clock-rotate-left"></i> ${freshness.label}</div>
+          </div>
+        `;
+      }
     } else {
       bedBadgeHtml = `
         <div style="background: rgba(100, 116, 139, 0.12); padding: 6px 10px; border-radius: 8px; margin: 6px 0; font-size: 11.5px; color: var(--text-secondary); border: 1px solid rgba(100, 116, 139, 0.2);">
@@ -892,6 +967,7 @@ function updateLayerMarkers(facilities) {
         </div>
       `;
     }
+
 
     const phoneHtml = item.phone
       ? `<a href="tel:${item.phone}" class="btn btn-outline btn-sm" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-phone"></i> Call</a>`

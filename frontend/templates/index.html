@@ -1,478 +1,521 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description"
-        content="Arogya Map — Real-time hospital bed, ICU, and ventilator availability tracking with priority emergency SOS routing. Know before you go.">
-    <title>Arogya Map — Smart Emergency Healthcare & Hospital Bed Availability</title>
+    <meta name="description" content="Find nearby hospitals and clinics around you, with live bed, ICU, and ventilator availability counts where hospitals share them.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="canonical" href="{{ request.base_url }}">
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="Arogya Map — Smart Emergency Healthcare Platform">
-    <meta property="og:description"
-        content="Find nearby hospitals, view real-time ICU and ventilator availability, and request emergency hospital beds during critical moments.">
+    <!-- Open Graph & Twitter -->
+    <meta property="og:title" content="Arogya Map: find nearby hospitals with beds available">
+    <meta property="og:description" content="See hospitals and clinics around you, with live bed counts where hospitals share them.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.base_url }}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Arogya Map: find nearby hospitals with beds available">
+    <meta name="twitter:description" content="See hospitals and clinics around you, with live bed counts where hospitals share them.">
+
+    <title>Arogya Map: find nearby hospitals with beds available</title>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pages.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* ── Page-Specific Strict Reset & Typography ── */
+        .landing-page {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-primary, #ffffff);
+            color: var(--text-primary, #1e293b);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .landing-page * {
+            box-sizing: border-box;
+        }
+
+        /* 3 Strict Font Sizes */
+        .landing-page h1 {
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 600;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin: 0 0 16px 0;
+            color: var(--text-primary, #1e293b);
+        }
+
+        .landing-page h2 {
+            font-size: clamp(24px, 3.5vw, 32px);
+            font-weight: 600;
+            line-height: 1.25;
+            margin: 0 0 12px 0;
+            color: var(--text-primary, #1e293b);
+        }
+
+        .landing-page h3 {
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin: 0 0 6px 0;
+            color: var(--text-primary, #1e293b);
+        }
+
+        .landing-page p,
+        .landing-page .body-text {
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--text-secondary, #475569);
+            margin: 0;
+        }
+
+        .landing-page .small-text {
+            font-size: 14px;
+            font-weight: 400;
+            line-height: 1.5;
+            color: var(--text-secondary, #64748b);
+        }
+
+        /* Spacing System */
+        .landing-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .landing-section {
+            padding: 96px 0;
+        }
+
+        @media (max-width: 768px) {
+            .landing-section {
+                padding: 56px 0;
+            }
+        }
+
+        /* Accessibility: Skip Link */
+        .skip-to-content {
+            position: absolute;
+            top: -40px;
+            left: 16px;
+            background: var(--teal, #00b894);
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            z-index: 1000;
+            text-decoration: none;
+            transition: top 0.2s;
+        }
+        .skip-to-content:focus {
+            top: 12px;
+            outline: 2px solid var(--text-primary, #1e293b);
+        }
+
+        /* Block 0: Slim Emergency Strip */
+        .emergency-strip {
+            background-color: #fef2f2;
+            border-bottom: 1px solid rgba(220, 38, 38, 0.2);
+            color: #dc2626;
+            font-size: 14px;
+            font-weight: 400;
+            text-align: center;
+            padding: 10px 16px;
+        }
+        [data-theme="dark"] .emergency-strip {
+            background-color: #2a1215;
+            border-bottom-color: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+        .emergency-strip a {
+            color: inherit;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        .emergency-strip a:hover {
+            opacity: 0.85;
+        }
+
+        /* Block 1: Header */
+        .calm-header {
+            border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+            background: var(--bg-primary, #ffffff);
+            position: relative;
+        }
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+        }
+        .header-logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary, #1e293b);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-logo:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 4px;
+        }
+        .header-nav {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+        }
+        .header-link {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-primary, #1e293b);
+            text-decoration: none;
+        }
+        .header-link:hover {
+            text-decoration: underline;
+        }
+        .header-link:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 2px;
+        }
+
+        /* Button Style (Teal Fill, 12px Radius, Min 48px Height) */
+        .btn-teal-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--teal, #00b894);
+            color: #ffffff !important;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 14px 28px;
+            min-height: 48px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+        .btn-teal-primary:hover {
+            opacity: 0.92;
+        }
+        .btn-teal-primary:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 3px;
+        }
+
+        .btn-header-signup {
+            padding: 8px 18px;
+            min-height: 40px;
+            font-size: 14px;
+            border-radius: 10px;
+        }
+
+        /* Mobile Menu */
+        .menu-toggle-btn {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-color, rgba(148, 163, 184, 0.3));
+            color: var(--text-primary, #1e293b);
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .mobile-menu-drawer {
+            display: none;
+            padding: 16px 24px 24px;
+            border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.2));
+            background: var(--bg-primary, #ffffff);
+        }
+        .mobile-menu-drawer.active {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .header-nav {
+                display: none;
+            }
+            .menu-toggle-btn {
+                display: block;
+            }
+        }
+
+        /* Block 2: Hero */
+        .hero-block {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+        .hero-subtext {
+            max-width: 640px;
+            margin: 0 auto 36px auto;
+        }
+        .hero-quiet-link {
+            display: block;
+            margin-top: 18px;
+            font-size: 14px;
+            color: var(--text-secondary, #64748b);
+            text-decoration: none;
+        }
+        .hero-quiet-link:hover {
+            text-decoration: underline;
+        }
+        .hero-quiet-link:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 480px) {
+            .btn-hero {
+                width: 100%;
+            }
+        }
+
+        /* Block 3: How It Works */
+        .how-it-works-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 24px;
+        }
+        .how-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .how-icon {
+            color: var(--teal, #00b894);
+            margin-bottom: 16px;
+            display: inline-flex;
+        }
+
+        @media (max-width: 768px) {
+            .how-it-works-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+        }
+
+        /* Block 4: For Hospitals Band */
+        .hospitals-band {
+            background-color: rgba(0, 184, 148, 0.05);
+            border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));
+            border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));
+            text-align: center;
+        }
+        [data-theme="dark"] .hospitals-band {
+            background-color: rgba(0, 184, 148, 0.08);
+        }
+        .band-content {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+        .band-content p {
+            margin-bottom: 28px;
+        }
+        .band-login-link {
+            display: block;
+            margin-top: 14px;
+            font-size: 14px;
+            color: var(--text-secondary, #64748b);
+            text-decoration: none;
+        }
+        .band-login-link:hover {
+            text-decoration: underline;
+        }
+        .band-login-link:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 2px;
+        }
+
+        /* Theme Toggle Button */
+        .landing-theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary, #64748b);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .landing-theme-toggle:focus {
+            outline: 2px solid var(--teal, #00b894);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+        }
+    </style>
 </head>
+<body class="landing-page">
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
 
-<body>
-    <div class="bg-mesh"></div>
-
-    <!-- Public Navigation Bar -->
-    <header class="landing-navbar">
-        <div class="container landing-nav-container">
-            <a href="/" class="landing-logo">
-                <i class="fa-solid fa-heart-pulse"></i>
-                <span>Arogya Map</span>
-            </a>
-
-            <nav class="landing-nav-links" id="landing-nav-links" aria-label="Main navigation">
-                <a href="#features">Features</a>
-                <a href="#how-it-works">How It Works</a>
-                <a href="/hospitals">Find Hospitals</a>
-                <a href="/emergency" style="color: var(--rose);">Emergency SOS</a>
-                <a href="/about">About</a>
-                <a href="/contact">Contact</a>
-            </nav>
-
-            <div class="landing-nav-actions">
-                <a href="tel:112" class="landing-emergency-pill" title="National Emergency Helpline">
-                    <i class="fa-solid fa-phone"></i> 112 / 108
-                </a>
-                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
-                    <i class="fas fa-sun"></i>
-                </button>
-                <a href="/login" class="btn btn-outline btn-sm">
-                    <i class="fa-solid fa-right-to-bracket"></i> Sign In
-                </a>
-                <a href="/hospitals" class="btn btn-primary btn-sm">
-                    Find Beds <i class="fa-solid fa-arrow-right"></i>
-                </a>
-                <button class="landing-menu-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Emergency Announcement Strip -->
-    <div class="ar-emergency-strip" role="alert" style="margin-top: 72px; margin-left: 0;">
-        <i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>
-        In an immediate life-threatening emergency, always call <a href="tel:112">112</a> (National Emergency) or <a href="tel:108">108</a> (Ambulance) first.
+    <!-- Slim emergency strip above header -->
+    <div class="emergency-strip" role="alert">
+        In an emergency, call <a href="tel:112">112</a> or <a href="tel:108">108</a> (ambulance) first.
     </div>
 
-    <!-- Hero Section -->
-    <section class="landing-hero">
-        <div class="container landing-hero-grid">
-            <!-- Left: Hero Headline & Actions -->
-            <div>
-                <div class="hero-badge">
-                    <i class="fa-solid fa-shield-heart"></i>
-                    India's Smart Healthcare Resource Network
-                </div>
-                <h1>Don't Waste the Golden Hour. <span class="landing-highlight">Know Which Hospital Has a Bed.</span></h1>
-                <p>
-                    Arogya Map maps nearby trauma centers and clinics, displays verified real-time ICU and ventilator availability, and locks in priority emergency admissions before you leave home.
-                </p>
-                <div class="landing-hero-ctas">
-                    <a href="/hospitals" class="landing-btn-primary">
-                        <i class="fa-solid fa-location-crosshairs"></i> Find Hospitals Nearby
-                    </a>
-                    <a href="/emergency" class="landing-btn-emergency">
-                        <i class="fa-solid fa-phone-volume"></i> Emergency SOS Dispatch
-                    </a>
-                    <a href="/login" class="landing-btn-glass">
-                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Patient & Admin Login
-                    </a>
+    <!-- 1. Header -->
+    <header class="calm-header">
+        <div class="landing-container header-inner">
+            <a href="/" class="header-logo" aria-label="Arogya Map home">
+                Arogya Map
+            </a>
+
+            <nav class="header-nav" aria-label="Main navigation">
+                <a href="/hospitals" class="header-link">Find hospitals</a>
+                <a href="/hospital/register" class="header-link">For hospitals</a>
+                <a href="/login" class="header-link">Log in</a>
+                <a href="/signup" class="btn-teal-primary btn-header-signup">Sign up</a>
+                <button type="button" class="landing-theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark or light theme">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </nav>
+
+            <button type="button" class="menu-toggle-btn" id="mobile-menu-btn" onclick="toggleMobileNav()" aria-expanded="false" aria-controls="mobile-nav-drawer">
+                Menu
+            </button>
+        </div>
+
+        <nav class="mobile-menu-drawer" id="mobile-nav-drawer" aria-label="Mobile navigation">
+            <a href="/hospitals" class="header-link">Find hospitals</a>
+            <a href="/hospital/register" class="header-link">For hospitals</a>
+            <a href="/login" class="header-link">Log in</a>
+            <a href="/signup" class="btn-teal-primary btn-header-signup" style="width: 100%;">Sign up</a>
+            <div style="padding-top: 8px;">
+                <button type="button" class="landing-theme-toggle" onclick="toggleTheme()" style="gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="5"></circle>
+                    </svg>
+                    <span>Toggle theme</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- 2. Hero -->
+        <section class="landing-section">
+            <div class="landing-container">
+                <div class="hero-block">
+                    <h1>Find a nearby hospital with beds available.</h1>
+                    <p class="hero-subtext">See hospitals and clinics around you, with live bed counts where hospitals share them.</p>
+                    <a href="/hospitals" class="btn-teal-primary btn-hero">Find hospitals near me</a>
+                    <a href="/signup" class="hero-quiet-link">Create a free account to send emergency requests</a>
                 </div>
             </div>
+        </section>
 
-            <!-- Right: Interactive Live Radar Mockup -->
-            <div>
-                <div class="hero-radar-card">
-                    <div class="radar-header">
-                        <div class="radar-title">
-                            <span class="radar-pulse-dot"></span>
-                            Live Hospital Radar
+        <!-- 3. How It Works -->
+        <section class="landing-section" style="border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.15));">
+            <div class="landing-container">
+                <div class="how-it-works-grid">
+                    <!-- Item 1 -->
+                    <div class="how-item">
+                        <div class="how-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
                         </div>
-                        <span style="font-size: 0.75rem; color: #5eead4; font-weight: 600;">
-                            <i class="fa-solid fa-satellite-dish"></i> OpenStreetMap Live
-                        </span>
+                        <h3>Share your location</h3>
+                        <p class="small-text">Or search your area.</p>
                     </div>
 
-                    <div class="radar-facility-list">
-                        <!-- Facility 1 -->
-                        <div class="radar-facility-item">
-                            <div class="facility-row-top">
-                                <span class="facility-name">Apollo Multispeciality</span>
-                                <span class="facility-dist"><i class="fa-solid fa-location-arrow"></i> 1.8 km</span>
-                            </div>
-                            <div class="facility-badges">
-                                <span class="cap-badge beds"><i class="fa-solid fa-bed"></i> 14 Beds Available</span>
-                                <span class="cap-badge icu"><i class="fa-solid fa-heart-pulse"></i> 4 ICU Beds</span>
-                                <span class="cap-badge vent"><i class="fa-solid fa-lungs"></i> 2 Ventilators</span>
-                            </div>
+                    <!-- Item 2 -->
+                    <div class="how-item">
+                        <div class="how-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"/>
+                                <circle cx="12" cy="12" r="6"/>
+                                <circle cx="12" cy="12" r="2"/>
+                            </svg>
                         </div>
+                        <h3>Choose a distance</h3>
+                        <p class="small-text">Show places within 5, 10 or 20 km.</p>
+                    </div>
 
-                        <!-- Facility 2 -->
-                        <div class="radar-facility-item">
-                            <div class="facility-row-top">
-                                <span class="facility-name">City Trauma & Emergency Care</span>
-                                <span class="facility-dist"><i class="fa-solid fa-location-arrow"></i> 2.6 km</span>
-                            </div>
-                            <div class="facility-badges">
-                                <span class="cap-badge beds"><i class="fa-solid fa-bed"></i> 8 Beds Available</span>
-                                <span class="cap-badge icu"><i class="fa-solid fa-heart-pulse"></i> 2 ICU Beds</span>
-                                <span class="cap-badge vent" style="background: rgba(244, 63, 94, 0.15); color: #fda4af;">
-                                    <i class="fa-solid fa-triangle-exclamation"></i> Ventilators Full
-                                </span>
-                            </div>
+                    <!-- Item 3 -->
+                    <div class="how-item">
+                        <div class="how-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
                         </div>
-
-                        <!-- Facility 3 -->
-                        <div class="radar-facility-item">
-                            <div class="facility-row-top">
-                                <span class="facility-name">LifeCare Clinic & Diagnostic</span>
-                                <span class="facility-dist"><i class="fa-solid fa-location-arrow"></i> 3.4 km</span>
-                            </div>
-                            <div class="facility-badges">
-                                <span class="cap-badge beds"><i class="fa-solid fa-bed"></i> 22 General Beds</span>
-                                <span class="cap-badge" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1;">
-                                    <i class="fa-solid fa-phone"></i> Call to Confirm
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="radar-footer">
-                        <span><i class="fa-solid fa-database" style="color: var(--teal); margin-right: 6px;"></i> ACID Transaction Guaranteed</span>
-                        <a href="/hospitals" style="color: #5eead4; font-weight: 700; text-decoration: none;">View Live Map &rarr;</a>
+                        <h3>Call or get directions</h3>
+                        <p class="small-text">See beds available where shared.</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Trust & Real-Time Impact Metric Strip -->
-    <section class="landing-section" style="padding: 44px 0;">
-        <div class="container">
-            <div class="landing-metrics-grid">
-                <div class="metric-box">
-                    <div class="metric-val teal">OSM</div>
-                    <div class="metric-title">Overpass API Live Radar</div>
-                    <div class="metric-desc">Sub-second spatial queries querying hospitals across your 5–25 km radius.</div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-val blue">Live</div>
-                    <div class="metric-title">Bed & ICU Visibility</div>
-                    <div class="metric-desc">Continuous capacity telemetry for General beds, ICU units, and life-support ventilators.</div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-val rose">4 Tiers</div>
-                    <div class="metric-title">Emergency Triage Engine</div>
-                    <div class="metric-desc">Low, Medium, High, and Critical priority routing ensuring severe patients get immediate ICU care.</div>
-                </div>
-                <div class="metric-box">
-                    <div class="metric-val purple">100%</div>
-                    <div class="metric-title">Free Public Utility</div>
-                    <div class="metric-desc">Zero paywalls or subscriptions for citizens and emergency seekers.</div>
+        <!-- 4. For Hospitals Band -->
+        <section class="landing-section hospitals-band">
+            <div class="landing-container">
+                <div class="band-content">
+                    <h2>Run a hospital or clinic?</h2>
+                    <p>Keep your bed counts up to date and be found by people nearby.</p>
+                    <a href="/hospital/register" class="btn-teal-primary">Register your hospital</a>
+                    <a href="/login" class="band-login-link">Hospital login</a>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Problem vs Solution: The Golden Hour Dilemma -->
-    <section class="landing-section alt-bg">
-        <div class="container">
-            <div class="landing-section-header">
-                <span class="landing-pill-tag"><i class="fa-solid fa-hourglass-half"></i> The Golden Hour Problem</span>
-                <h2 class="landing-section-title">Emergency Healthcare Shouldn't Be a Guessing Game</h2>
-                <p class="landing-section-subtitle">
-                    During cardiac arrest, severe trauma, or stroke, every minute lost searching for an available ICU bed dramatically lowers survival rates.
-                </p>
-            </div>
-
-            <div class="comparison-grid">
-                <!-- The Old Way -->
-                <div class="comparison-card old-way">
-                    <div>
-                        <div class="comparison-header">
-                            <i class="fa-solid fa-circle-xmark" style="color: var(--rose); font-size: 1.5rem;"></i>
-                            <h3>Without Arogya Map</h3>
-                        </div>
-                        <ul class="comparison-list">
-                            <li>
-                                <i class="fa-solid fa-xmark"></i>
-                                <div><strong>Blind Travel:</strong> Rushing to the nearest hospital only to find the emergency room and ICUs are 100% full.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-xmark"></i>
-                                <div><strong>Panic Calling:</strong> Families frantically dialing 6 different hospitals while their patient deteriorates in transit.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-xmark"></i>
-                                <div><strong>Unprepared Trauma Bay:</strong> Arriving unannounced with no bed, oxygen, or trauma team prepped for immediate intake.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-xmark"></i>
-                                <div><strong>Critical Minutes Lost:</strong> 45+ minutes wasted wandering between healthcare facilities during the golden hour.</div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--rose); font-weight: 600;">
-                        <i class="fa-solid fa-triangle-exclamation"></i> High risk of delayed medical intervention.
-                    </div>
-                </div>
-
-                <!-- With Arogya Map -->
-                <div class="comparison-card new-way">
-                    <div>
-                        <div class="comparison-header">
-                            <i class="fa-solid fa-circle-check" style="color: var(--teal); font-size: 1.5rem;"></i>
-                            <h3>With Arogya Map</h3>
-                        </div>
-                        <ul class="comparison-list">
-                            <li>
-                                <i class="fa-solid fa-check"></i>
-                                <div><strong>Instant Capacity Radar:</strong> Check live General and ICU bed counts on an interactive map in 3 seconds.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-check"></i>
-                                <div><strong>Priority SOS Dispatch:</strong> Trigger an emergency alert that matches the closest hospital with available life support.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-check"></i>
-                                <div><strong>Atomic Bed Reservation:</strong> Beds are locked via transactional database commits so you never lose the last bed.</div>
-                            </li>
-                            <li>
-                                <i class="fa-solid fa-check"></i>
-                                <div><strong>Advance ER Notification:</strong> The hospital prepares staff, ventilators, and admission before your ambulance arrives.</div>
-                            </li>
-                        </ul>
-                    </div>
-                    <div style="font-size: 0.85rem; color: var(--teal); font-weight: 700;">
-                        <i class="fa-solid fa-bolt"></i> Streamlined care delivery during critical minutes.
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Core Features Grid -->
-    <section class="landing-section" id="features">
-        <div class="container">
-            <div class="landing-section-header">
-                <span class="landing-pill-tag"><i class="fa-solid fa-microchip"></i> System Capabilities</span>
-                <h2 class="landing-section-title">Engineered for Rapid Response</h2>
-                <p class="landing-section-subtitle">
-                    Everything you need to navigate medical care, coordinate urgent admissions, and monitor health trends.
-                </p>
-            </div>
-
-            <div class="ar-features-grid">
-                <!-- Feature 1 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon teal"><i class="fa-solid fa-map-location-dot"></i></div>
-                        <h3>Live GPS Hospital Radar</h3>
-                    </div>
-                    <p>Sub-second Overpass API integration locates regional hospitals and clinics sorted by proximity, complete with direct phone links and routing.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-compass"></i> Live Geolocation</span>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon blue"><i class="fa-solid fa-bed-pulse"></i></div>
-                        <h3>Real-Time Bed & ICU Status</h3>
-                    </div>
-                    <p>Transparent visibility into confirmed General beds, ICU units, and ventilator life support facilities updated continuously by partner hospitals.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-circle-check"></i> Verified Capacity</span>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon rose"><i class="fa-solid fa-phone-volume"></i></div>
-                        <h3>Priority Emergency SOS</h3>
-                    </div>
-                    <p>Send an emergency request with triage priority (Low, Medium, High, Critical). Immediately places the patient into the regional dispatch queue.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-bolt"></i> Instant Dispatch</span>
-                </div>
-
-                <!-- Feature 4 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon emerald"><i class="fa-solid fa-lock"></i></div>
-                        <h3>Atomic Bed Reservation</h3>
-                    </div>
-                    <p>Transactional database isolation prevents double-booking of scarce beds during high-volume regional medical emergencies.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-database"></i> ACID Safe</span>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon amber"><i class="fa-solid fa-phone-flip"></i></div>
-                        <h3>National Emergency Dialers</h3>
-                    </div>
-                    <p>Direct one-touch phone triggers for 112 National Police/Medical and 108 Medical Ambulance so you can summon help without friction.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-tower-broadcast"></i> 112 & 108 Hotlines</span>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="ar-feature-card">
-                    <div class="ar-card-header">
-                        <div class="ar-card-icon purple"><i class="fa-solid fa-chart-line"></i></div>
-                        <h3>Preventative Health Intelligence</h3>
-                    </div>
-                    <p>Daily wellness tracker for sleep, daily steps, screen time, and stress metrics with 7-day health trend analytics to prevent medical emergencies.</p>
-                    <span class="ar-card-tag"><i class="fa-solid fa-heart-pulse"></i> Lifestyle Care</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works (3 Steps) -->
-    <section class="landing-section alt-bg" id="how-it-works">
-        <div class="container">
-            <div class="landing-section-header">
-                <span class="landing-pill-tag"><i class="fa-solid fa-route"></i> Simple 3-Step Process</span>
-                <h2 class="landing-section-title">How Arogya Map Works</h2>
-                <p class="landing-section-subtitle">
-                    Designed to be operated seamlessly by anyone on mobile or desktop in moments of high anxiety.
-                </p>
-            </div>
-
-            <div class="landing-steps-grid">
-                <!-- Step 1 -->
-                <div class="step-card">
-                    <div class="step-badge">1</div>
-                    <h3>Locate Nearby Facilities</h3>
-                    <p>Open the app and grant location access. Arogya Map instantly visualizes hospitals and emergency clinics within your search radius.</p>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="step-card">
-                    <div class="step-badge">2</div>
-                    <h3>Check Verified Bed Availability</h3>
-                    <p>View confirmed counts for General beds, ICU units, and Ventilators. Filter specifically for emergency-ready centers with open beds.</p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="step-card">
-                    <div class="step-badge">3</div>
-                    <h3>Request Bed & Dispatch</h3>
-                    <p>Submit an Emergency SOS with symptoms and priority. The dispatch coordinator locks an available bed and alerts the trauma team of your ETA.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Healthcare Facility Partner Banner -->
-    <section class="landing-section">
-        <div class="container">
-            <div class="landing-provider-banner">
-                <div class="landing-provider-content">
-                    <span class="landing-pill-tag"><i class="fa-solid fa-hospital"></i> For Healthcare Centers</span>
-                    <h3>Are You a Hospital Administrator or Clinic Manager?</h3>
-                    <p>
-                        Join the Arogya Map emergency network. Broadcast your real-time ward capacity to ambulances, patients, and dispatchers across your region.
-                    </p>
-                    <div class="landing-provider-pills">
-                        <span class="landing-provider-pill"><i class="fa-solid fa-bolt"></i> 60-Second Bed Updates</span>
-                        <span class="landing-provider-pill"><i class="fa-solid fa-bell"></i> Pre-arrival Triage Alerts</span>
-                        <span class="landing-provider-pill"><i class="fa-solid fa-laptop-medical"></i> Zero Software Install Needed</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <a href="/contact?topic=hospital" class="landing-btn-primary">
-                        <i class="fa-solid fa-plus-circle"></i> Onboard Your Facility
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ Section -->
-    <section class="landing-section alt-bg">
-        <div class="container" style="max-width: 860px;">
-            <div class="landing-section-header">
-                <span class="landing-pill-tag"><i class="fa-solid fa-circle-question"></i> FAQ</span>
-                <h2 class="landing-section-title">Frequently Asked Questions</h2>
-                <p class="landing-section-subtitle">Common questions about finding care, bed reservations, and platform access.</p>
-            </div>
-
-            <div class="ar-faq-card" style="box-shadow: none;">
-                <div class="ar-faq">
-                    <details open>
-                        <summary>How does Arogya Map find hospitals near me?</summary>
-                        <p>With your permission, Arogya Map uses your device's browser Geolocation API to find your precise coordinates, then queries OpenStreetMap Overpass servers to show all nearby hospitals and emergency trauma centers sorted by straight-line distance.</p>
-                    </details>
-
-                    <details>
-                        <summary>How is bed, ICU, and ventilator capacity updated?</summary>
-                        <p>Partner healthcare facilities log into the Arogya Map Hospital Portal to submit live capacity updates for General Beds, ICU units, and Ventilators. Facilities without a registered portal are shown as "Contact Hospital" with one-touch phone verification links.</p>
-                    </details>
-
-                    <details>
-                        <summary>How does the Emergency SOS priority system work?</summary>
-                        <p>When you trigger an Emergency SOS, you designate the urgency level: Low, Medium, High, or Critical. The dispatch queue prioritizes Critical cases first and automatically filters for hospitals equipped with functional ICU and ventilator beds.</p>
-                    </details>
-
-                    <details>
-                        <summary>Is Arogya Map a replacement for calling 108 or 112?</summary>
-                        <p>No. Arogya Map is a hospital availability finder and bed coordination platform. In any life-threatening situation, you should immediately call 112 (National Emergency) or 108 (Ambulance) so paramedics can be dispatched while you locate a receiving hospital.</p>
-                    </details>
-
-                    <details>
-                        <summary>Is Arogya Map free to use for patients?</summary>
-                        <p>Yes, 100% free. Arogya Map is built as a public health technological utility to reduce emergency delays and save lives. There are zero fees or subscriptions for patients searching for care.</p>
-                    </details>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- High-Impact Bottom Call to Action -->
-    <section class="landing-cta-section">
-        <div class="container">
-            <h2>Be Prepared Before an Emergency Strikes.</h2>
-            <p>
-                Bookmark Arogya Map on your phone, discover healthcare centers in your neighbourhood, or sign up to manage hospital beds.
-            </p>
-            <div class="landing-cta-buttons">
-                <a href="/hospitals" class="landing-btn-primary">
-                    <i class="fa-solid fa-location-dot"></i> Explore Nearby Hospitals
-                </a>
-                <a href="/signup" class="landing-btn-glass">
-                    <i class="fa-solid fa-user-plus"></i> Create Free Account
-                </a>
-                <a href="/emergency" class="landing-btn-emergency">
-                    <i class="fa-solid fa-phone-volume"></i> Emergency SOS
-                </a>
-            </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <!-- Shared Footer -->
     {% include "_footer.html" %}
 
-    <div id="toast" class="toast"></div>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
     function toggleMobileNav() {
-        const nav = document.getElementById('landing-nav-links');
-        if (nav) {
-            nav.classList.toggle('active');
+        const drawer = document.getElementById('mobile-nav-drawer');
+        const btn = document.getElementById('mobile-menu-btn');
+        if (drawer && btn) {
+            const isExpanded = drawer.classList.toggle('active');
+            btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
         }
     }
+
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        try {
+            localStorage.setItem('theme', newTheme);
+        } catch (e) {}
+    }
+
+    (function initTheme() {
+        try {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        } catch (e) {}
+    })();
     </script>
 </body>
-
 </html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Hospital Portal — Profile | Arogya Map</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .hospital-badge {
+            background-color: var(--teal);
+            color: white;
+            font-size: 0.65rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            vertical-align: middle;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .profile-container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .profile-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .admin-flag-notice {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 14px 18px;
+            color: var(--amber);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        #profile-map {
+            height: 280px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+        .coord-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+            margin-top: 10px;
+        }
+        .hours-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--teal);
+        }
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+    </style>
+</head>
+<body class="has-sidebar">
+    <div class="bg-mesh"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/hospital/dashboard" class="sidebar-logo">
+                <i class="fa-solid fa-hospital-user"></i>
+                <span>Arogya Map <span class="hospital-badge">Staff</span></span>
+            </a>
+            <button class="sidebar-close" onclick="toggleSidebar()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-label">Hospital Operations</div>
+            <a href="/hospital/dashboard"><i class="fa-solid fa-gauge-high"></i> Dashboard</a>
+            <a href="/hospital/profile" class="active"><i class="fa-solid fa-hospital"></i> Hospital Profile</a>
+            <a href="/hospital/history"><i class="fa-solid fa-clock-rotate-left"></i> Bed Update Log</a>
+
+            <div class="sidebar-nav-label" style="margin-top: 16px;">Public Access</div>
+            <a href="/hospitals" target="_blank"><i class="fa-solid fa-map-location-dot"></i> View on Finder</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="user-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+                <div class="sidebar-user-info">
+                    <div class="user-name-sidebar" id="staff-name">Hospital Staff</div>
+                    <div class="user-email-sidebar" id="staff-hospital-name">Loading...</div>
+                </div>
+            </div>
+            <div class="sidebar-actions">
+                <button class="btn btn-outline btn-sm" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <button class="btn btn-ghost btn-sm" onclick="handleLogout()" id="logout-btn" style="color: var(--rose);">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Top Navigation Bar for Mobile -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container" style="height: 56px;">
+            <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <a href="/hospital/dashboard" class="nav-logo">
+                <i class="fa-solid fa-hospital-user"></i>
+                <span>Hospital Profile</span>
+            </a>
+            <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fas fa-sun"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="container" style="margin-top: 80px; margin-bottom: 50px;">
+        <div class="profile-container">
+            <div style="margin-bottom: 24px;">
+                <h1 style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">
+                    <i class="fa-solid fa-hospital" style="color: var(--teal); margin-right: 8px;"></i>
+                    Hospital Facility Profile
+                </h1>
+                <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                    Manage your facility's public information, location pin, contact details, and operating hours.
+                </p>
+            </div>
+
+            <!-- Notice for Administrative Flagging -->
+            <div class="admin-flag-notice">
+                <i class="fa-solid fa-shield-halved" style="font-size: 1.3rem;"></i>
+                <div>
+                    <strong>Verification Notice:</strong> Updates to your facility name or GPS location pin are applied immediately and logged for administrative quality review.
+                </div>
+            </div>
+
+            <div class="profile-card">
+                <form id="profile-form" onsubmit="saveHospitalProfile(event)">
+                    <div class="form-grid">
+                        <!-- Name -->
+                        <div class="form-group full-width">
+                            <label for="prof-name">Facility Name *</label>
+                            <input type="text" id="prof-name" required minlength="3" maxlength="150">
+                        </div>
+
+                        <!-- Type -->
+                        <div class="form-group">
+                            <label for="prof-type">Facility Type *</label>
+                            <select id="prof-type" class="filter-select" style="width: 100%; height: 44px;">
+                                <option value="hospital">Hospital / Medical Center</option>
+                                <option value="clinic">Clinic / Urgent Care</option>
+                            </select>
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="form-group">
+                            <label for="prof-phone">Contact Phone *</label>
+                            <input type="text" id="prof-phone" required placeholder="+91 98765 43210">
+                        </div>
+
+                        <!-- Operating Hours -->
+                        <div class="form-group full-width">
+                            <label>Operating Hours</label>
+                            <div class="hours-row">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="prof-open-24h" onchange="toggleHoursNote()">
+                                    <span class="slider"></span>
+                                </label>
+                                <span style="font-weight: 600; font-size: 0.9rem;" id="open-24h-label">Open 24/7 Emergency Care</span>
+                            </div>
+                            <input type="text" id="prof-hours-note" placeholder="e.g. OPD Mon-Sat 8:00 AM - 8:00 PM; Emergency open 24h" maxlength="100">
+                        </div>
+
+                        <!-- Address -->
+                        <div class="form-group full-width">
+                            <label for="prof-address">Physical Address *</label>
+                            <textarea id="prof-address" rows="3" required placeholder="Full street address, area, city, pin code"></textarea>
+                        </div>
+
+                        <!-- Map & GPS Picker -->
+                        <div class="form-group full-width">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label>GPS Location Pin (Drag pin to adjust)</label>
+                                <span style="font-size: 0.75rem; color: var(--teal);"><i class="fa-solid fa-location-crosshairs"></i> Drag marker or click map</span>
+                            </div>
+                            <div id="profile-map"></div>
+
+                            <div class="coord-row">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.75rem;">Latitude</label>
+                                    <input type="number" step="any" id="prof-lat" required onchange="updateMarkerFromInputs()">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label style="font-size: 0.75rem;">Longitude</label>
+                                    <input type="number" step="any" id="prof-lng" required onchange="updateMarkerFromInputs()">
+                                </div>
+                                <button type="button" class="btn btn-outline btn-sm" onclick="useCurrentLocation()" style="height: 42px;">
+                                    <i class="fa-solid fa-crosshairs"></i> Current Location
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="full-width" style="margin-top: 16px; display: flex; justify-content: flex-end;">
+                            <button type="submit" class="btn btn-primary" id="save-profile-btn" style="min-width: 180px;">
+                                <i class="fa-solid fa-floppy-disk"></i> Update Profile
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    let map = null;
+    let marker = null;
+
+    function getCsrfHeader() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    function initMap(lat, lng) {
+        if (!map) {
+            map = L.map('profile-map').setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+            marker.on('dragend', function (e) {
+                const pos = marker.getLatLng();
+                document.getElementById('prof-lat').value = pos.lat.toFixed(6);
+                document.getElementById('prof-lng').value = pos.lng.toFixed(6);
+            });
+
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                document.getElementById('prof-lat').value = e.latlng.lat.toFixed(6);
+                document.getElementById('prof-lng').value = e.latlng.lng.toFixed(6);
+            });
+        } else {
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng], 14);
+        }
+    }
+
+    function updateMarkerFromInputs() {
+        const lat = parseFloat(document.getElementById('prof-lat').value);
+        const lng = parseFloat(document.getElementById('prof-lng').value);
+        if (!isNaN(lat) && !isNaN(lng) && marker && map) {
+            marker.setLatLng([lat, lng]);
+            map.setView([lat, lng], 14);
+        }
+    }
+
+    function useCurrentLocation() {
+        if (!navigator.geolocation) {
+            showToast('Geolocation is not supported by your browser', 'error');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                document.getElementById('prof-lat').value = lat.toFixed(6);
+                document.getElementById('prof-lng').value = lng.toFixed(6);
+                if (marker && map) {
+                    marker.setLatLng([lat, lng]);
+                    map.setView([lat, lng], 15);
+                }
+                showToast('Updated pin to your current position', 'success');
+            },
+            (err) => {
+                showToast('Unable to retrieve location: ' + err.message, 'error');
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    }
+
+    function toggleHoursNote() {
+        const is24h = document.getElementById('prof-open-24h').checked;
+        const noteInput = document.getElementById('prof-hours-note');
+        if (is24h) {
+            noteInput.placeholder = 'Optional note (e.g. Emergency 24/7, Pharmacy open 24h)';
+        } else {
+            noteInput.placeholder = 'Operating hours (e.g. Mon-Sat 9:00 AM - 8:00 PM)';
+        }
+    }
+
+    async function loadHospitalProfile() {
+        try {
+            const res = await fetch('/api/hospital/me');
+            if (!res.ok) {
+                showToast('Failed to load profile details', 'error');
+                return;
+            }
+            const data = await res.json();
+            const h = data.hospital;
+
+            document.getElementById('prof-name').value = h.name || '';
+            document.getElementById('prof-type').value = h.type || 'hospital';
+            document.getElementById('prof-address').value = h.address || h.location || '';
+            document.getElementById('prof-phone').value = h.contact || '';
+            document.getElementById('prof-open-24h').checked = h.open_24h === 1;
+            document.getElementById('prof-hours-note').value = h.hours_note || '';
+
+            const lat = h.latitude || 19.0760;
+            const lng = h.longitude || 72.8777;
+            document.getElementById('prof-lat').value = lat;
+            document.getElementById('prof-lng').value = lng;
+
+            document.getElementById('staff-hospital-name').textContent = h.name;
+            if (data.user && data.user.name) {
+                document.getElementById('staff-name').textContent = data.user.name;
+            }
+
+            initMap(lat, lng);
+            toggleHoursNote();
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+            showToast('Network error loading profile', 'error');
+        }
+    }
+
+    async function saveHospitalProfile(e) {
+        e.preventDefault();
+        const btn = document.getElementById('save-profile-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+
+        const payload = {
+            name: document.getElementById('prof-name').value.trim(),
+            type: document.getElementById('prof-type').value,
+            address: document.getElementById('prof-address').value.trim(),
+            phone: document.getElementById('prof-phone').value.trim(),
+            open_24h: document.getElementById('prof-open-24h').checked ? 1 : 0,
+            hours_note: document.getElementById('prof-hours-note').value.trim(),
+            latitude: parseFloat(document.getElementById('prof-lat').value),
+            longitude: parseFloat(document.getElementById('prof-lng').value)
+        };
+
+        try {
+            const res = await fetch('/api/hospital/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': getCsrfHeader()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                showToast(data.message || 'Profile updated successfully', 'success');
+                loadHospitalProfile();
+            } else {
+                showToast(data.error || 'Failed to update profile', 'error');
+            }
+        } catch (err) {
+            console.error('Error updating profile:', err);
+            showToast('Network error updating profile', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Update Profile';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadHospitalProfile();
+    });
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Arogya Map Admin Panel — Manage hospitals, patients, and users.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Arogya Map Admin | Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -72,6 +73,7 @@
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Command Center</div>
             <a href="/admin/dashboard" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospital-applications"><i class="fa-solid fa-file-signature"></i> Applications <span class="badge pending" id="pending-apps-badge" style="display:none; font-size:0.65rem; margin-left: 6px;">0</span></a>
             <a href="/admin/hospitals"><i class="fa-solid fa-hospital"></i> Hospitals</a>
             <a href="/admin/patients"><i class="fa-solid fa-truck-medical"></i> Patients</a>
             <a href="/admin/users"><i class="fa-solid fa-users"></i> Users</a>
@@ -119,7 +121,7 @@
         <p class="section-subtitle reveal" style="margin-bottom: 24px;">Real-time command center metrics</p>
 
         <!-- Stats Row -->
-        <section class="stats-grid" id="admin-stats-grid">
+        <section class="stats-grid" id="admin-stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
             <div class="glass-card stat-card reveal">
                 <div class="stat-header">
                     <div class="stat-icon teal"><i class="fa-solid fa-hospital"></i></div>
@@ -151,7 +153,16 @@
                 <div class="stat-label">Total Users</div>
                 <div class="stat-value" id="stat-users">0</div>
             </div>
+
+            <div class="glass-card stat-card reveal reveal-delay-3">
+                <div class="stat-header">
+                    <div class="stat-icon rose"><i class="fa-solid fa-file-signature"></i></div>
+                </div>
+                <div class="stat-label">Pending Applications</div>
+                <div class="stat-value" id="stat-pending-apps">0</div>
+            </div>
         </section>
+
 
         <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
             <!-- Hospital Capacity Overview -->

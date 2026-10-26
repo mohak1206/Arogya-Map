@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Create your Arogya Map account to access smart healthcare services.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Arogya Map | Create Account</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -83,6 +84,11 @@
                 <div style="margin-top: 28px; text-align: center; font-size: 0.9rem;">
                     Already have an account?
                     <a href="/login" style="color: var(--teal); font-weight: 600;">Sign In</a>
+                </div>
+
+                <div style="margin-top: 12px; text-align: center; font-size: 0.85rem; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                    Hospital or clinic staff?
+                    <a href="/hospital/register" style="color: var(--teal); font-weight: 600;">Apply for hospital account</a>
                 </div>
             </div>
         </div>

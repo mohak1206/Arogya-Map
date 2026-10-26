@@ -56,6 +56,11 @@ def admin_users():
 def admin_reports():
     return render_template('admin_reports.html')
 
+@admin_bp.route('/hospital-applications')
+@admin_required
+def admin_hospital_applications():
+    return render_template('admin_applications.html')
+
 
 # ==============================================================================
 # API ROUTES (JSON)
@@ -86,6 +91,10 @@ def dashboard_stats():
         # 4. Total Users
         cur.execute("SELECT COUNT(*) AS total_users FROM users WHERE role = 'user'")
         total_users = cur.fetchone()['total_users']
+
+        # 4b. Pending Hospital Applications
+        cur.execute("SELECT COUNT(*) AS pending_apps FROM hospital_applications WHERE status = 'pending'")
+        pending_apps = cur.fetchone()['pending_apps']
         
         # 5. Table showing all hospitals (Hospital Overview)
         cur.execute("SELECT id, name, available_beds FROM hospitals ORDER BY available_beds ASC")
@@ -109,6 +118,7 @@ def dashboard_stats():
             'total_beds': int(total_beds),
             'requests_today': req_today,
             'total_users': total_users,
+            'pending_applications': pending_apps,
             'hospitals_overview': hospitals_overview,
             'recent_requests': recent_requests
         })
@@ -264,7 +274,7 @@ def update_patient_status(p_id):
         mysql.connection.begin()
         try:
             # Lock the emergency request row to check previous state
-            cur.execute('SELECT hospital_id, status FROM emergency_requests WHERE id=%s FOR UPDATE', (p_id,))
+            cur.execute('SELECT hospital_id, status, priority FROM emergency_requests WHERE id=%s FOR UPDATE', (p_id,))
             req_row = cur.fetchone()
             if not req_row:
                 mysql.connection.rollback()
@@ -273,14 +283,21 @@ def update_patient_status(p_id):
 
             prev_status = req_row.get('status')
             hosp_id = req_row.get('hospital_id')
+            priority = req_row.get('priority')
 
             # If moving to completed (or cancelled) from assigned, restore bed count
             if status in ('completed', 'cancelled') and prev_status == 'assigned' and hosp_id:
-                cur.execute(
-                    'UPDATE hospitals SET available_beds = LEAST(total_beds, available_beds + 1) WHERE id = %s',
-                    (hosp_id,)
-                )
-                cur.execute('SELECT available_beds, total_beds, available_icu, available_ventilators FROM hospitals WHERE id = %s', (hosp_id,))
+                if priority == 'critical':
+                    cur.execute(
+                        'UPDATE hospitals SET available_beds = LEAST(total_beds, available_beds + 1), available_icu = LEAST(icu_beds, available_icu + 1), beds_updated_at = NOW() WHERE id = %s',
+                        (hosp_id,)
+                    )
+                else:
+                    cur.execute(
+                        'UPDATE hospitals SET available_beds = LEAST(total_beds, available_beds + 1), beds_updated_at = NOW() WHERE id = %s',
+                        (hosp_id,)
+                    )
+                cur.execute('SELECT available_beds, total_beds, available_icu, icu_beds, available_ventilators, ventilators FROM hospitals WHERE id = %s', (hosp_id,))
                 restored_h = cur.fetchone()
                 if restored_h:
                     try:
@@ -290,7 +307,9 @@ def update_patient_status(p_id):
                             'available_beds': restored_h['available_beds'],
                             'total_beds': restored_h['total_beds'],
                             'available_icu': restored_h['available_icu'],
-                            'available_ventilators': restored_h['available_ventilators']
+                            'icu_beds': restored_h['icu_beds'],
+                            'available_ventilators': restored_h['available_ventilators'],
+                            'ventilators': restored_h['ventilators']
                         })
                     except Exception as b_err:
                         print(f"Broadcast error on bed restore: {b_err}")
@@ -314,9 +333,11 @@ def get_users():
     try:
         cur = mysql.connection.cursor()
         cur.execute('''
-            SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at, 
+            SELECT u.id, u.name, u.email, u.role, u.is_active, u.created_at,
+                   u.hospital_id, h.name as hospital_name,
                    COUNT(hd.id) as health_entries
             FROM users u
+            LEFT JOIN hospitals h ON u.hospital_id = h.id
             LEFT JOIN health_data hd ON u.id = hd.user_id
             GROUP BY u.id
             ORDER BY u.id DESC
@@ -345,15 +366,180 @@ def toggle_user_status(u_id):
 @admin_api_bp.route('/users/<int:u_id>/role', methods=['PATCH'])
 @admin_api_required
 def toggle_user_role(u_id):
-    role = request.json.get('role')
+    data = request.get_json() or {}
+    role = data.get('role')
+    hospital_id = data.get('hospital_id')
+
+    if role not in ('user', 'admin', 'hospital'):
+        return jsonify({'error': 'Invalid role. Must be user, admin, or hospital'}), 400
+
+    if role == 'hospital' and not hospital_id:
+        return jsonify({'error': 'A hospital role requires selecting an assigned hospital'}), 400
+
     try:
         cur = mysql.connection.cursor()
-        cur.execute('UPDATE users SET role=%s WHERE id=%s', (role, u_id))
+        cur.execute("SELECT id, role FROM users WHERE id = %s", (u_id,))
+        target_user = cur.fetchone()
+        if not target_user:
+            cur.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        # Prevent demoting the last remaining active admin
+        if target_user['role'] == 'admin' and role != 'admin':
+            cur.execute("SELECT COUNT(*) AS count FROM users WHERE role = 'admin' AND is_active = 1")
+            admin_count = cur.fetchone()['count']
+            if admin_count <= 1:
+                cur.close()
+                return jsonify({'error': 'Cannot demote the last remaining admin'}), 400
+
+        # If hospital role, verify hospital exists
+        if role == 'hospital':
+            cur.execute("SELECT id FROM hospitals WHERE id = %s", (hospital_id,))
+            if not cur.fetchone():
+                cur.close()
+                return jsonify({'error': 'Selected hospital does not exist'}), 404
+        else:
+            hospital_id = None
+
+        cur.execute('UPDATE users SET role=%s, hospital_id=%s WHERE id=%s', (role, hospital_id, u_id))
         mysql.connection.commit()
         cur.close()
-        return jsonify({'message': 'User role updated'})
+        return jsonify({'message': 'User role updated successfully'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ── Hospital Application Review APIs ──────────────────────────────────────────
+
+@admin_api_bp.route('/applications', methods=['GET'])
+@admin_api_required
+def get_applications():
+    status = request.args.get('status', 'all').strip().lower()
+    try:
+        cur = mysql.connection.cursor()
+        if status in ('pending', 'approved', 'rejected'):
+            cur.execute("""
+                SELECT ha.*, u.name as reviewer_name
+                FROM hospital_applications ha
+                LEFT JOIN users u ON ha.reviewed_by = u.id
+                WHERE ha.status = %s
+                ORDER BY ha.created_at DESC
+            """, (status,))
+        else:
+            cur.execute("""
+                SELECT ha.*, u.name as reviewer_name
+                FROM hospital_applications ha
+                LEFT JOIN users u ON ha.reviewed_by = u.id
+                ORDER BY CASE WHEN ha.status = 'pending' THEN 0 ELSE 1 END, ha.created_at DESC
+            """)
+        apps = cur.fetchall()
+        cur.close()
+        for a in apps:
+            a['latitude'] = float(a['latitude'])
+            a['longitude'] = float(a['longitude'])
+            if a.get('created_at'): a['created_at'] = str(a['created_at'])
+            if a.get('reviewed_at'): a['reviewed_at'] = str(a['reviewed_at'])
+            a.pop('password_hash', None)
+        return jsonify(apps)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@admin_api_bp.route('/applications/<int:app_id>', methods=['PATCH'])
+@admin_api_required
+def review_application(app_id):
+    data = request.get_json() or {}
+    action = data.get('action')  # 'approve' or 'reject'
+    note = str(data.get('note', '')).strip()
+
+    if action not in ('approve', 'reject'):
+        return jsonify({'error': 'Action must be approve or reject'}), 400
+
+    admin_id = session.get('user_id')
+
+    try:
+        cur = mysql.connection.cursor()
+        mysql.connection.begin()
+        try:
+            cur.execute("SELECT * FROM hospital_applications WHERE id = %s FOR UPDATE", (app_id,))
+            app_record = cur.fetchone()
+            if not app_record:
+                mysql.connection.rollback()
+                cur.close()
+                return jsonify({'error': 'Application not found'}), 404
+
+            if app_record['status'] != 'pending':
+                mysql.connection.rollback()
+                cur.close()
+                return jsonify({'error': f'Application has already been {app_record["status"]}'}), 400
+
+            if action == 'approve':
+                # Check email in users
+                cur.execute("SELECT id FROM users WHERE email = %s", (app_record['email'],))
+                if cur.fetchone():
+                    mysql.connection.rollback()
+                    cur.close()
+                    return jsonify({'error': 'Email is already registered as a user'}), 409
+
+                # Create hospital row (beds at 0, beds_updated_at NULL)
+                cur.execute("""
+                    INSERT INTO hospitals
+                    (name, type, location, address, latitude, longitude,
+                     total_beds, available_beds, icu_beds, available_icu,
+                     ventilators, available_ventilators, contact, is_active, beds_updated_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, 0, 0, 0, 0, 0, 0, %s, 1, NULL)
+                """, (
+                    app_record['hospital_name'],
+                    app_record['type'],
+                    app_record['address'],
+                    app_record['address'],
+                    app_record['latitude'],
+                    app_record['longitude'],
+                    app_record['phone']
+                ))
+                new_hospital_id = cur.lastrowid
+
+                # Create user row (role 'hospital', hospital_id set, stored password_hash)
+                cur.execute("""
+                    INSERT INTO users
+                    (name, email, password, role, hospital_id, is_active)
+                    VALUES (%s, %s, %s, 'hospital', %s, 1)
+                """, (
+                    app_record['contact_person'],
+                    app_record['email'],
+                    app_record['password_hash'],
+                    new_hospital_id
+                ))
+
+                # Mark application approved
+                cur.execute("""
+                    UPDATE hospital_applications
+                    SET status = 'approved', admin_note = %s, reviewed_by = %s, reviewed_at = NOW()
+                    WHERE id = %s
+                """, (note, admin_id, app_id))
+
+            else:
+                # Reject
+                cur.execute("""
+                    UPDATE hospital_applications
+                    SET status = 'rejected', admin_note = %s, reviewed_by = %s, reviewed_at = NOW()
+                    WHERE id = %s
+                """, (note, admin_id, app_id))
+
+            mysql.connection.commit()
+        except Exception as tx_err:
+            mysql.connection.rollback()
+            cur.close()
+            return jsonify({'error': f'Transaction failed: {str(tx_err)}'}), 500
+
+        cur.close()
+        return jsonify({
+            'message': f'Application {action}d successfully',
+            'hospital_id': new_hospital_id if action == 'approve' else None
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @admin_api_bp.route('/users/<int:u_id>/health', methods=['GET'])
 @admin_api_required

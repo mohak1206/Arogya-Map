@@ -15,6 +15,7 @@ import os
 import math
 import re
 import queue
+import secrets
 from datetime import datetime
 from functools import wraps
 from flask import Flask, request, jsonify, session, render_template, redirect, url_for, Response
@@ -42,6 +43,36 @@ mysql.init_app(app)
 from site_config import init_site_config
 init_site_config(app)
 
+
+# ── Helper: CSRF Protection ─────────────────────────────────────────────────
+def get_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = secrets.token_hex(32)
+    return session['_csrf_token']
+
+@app.context_processor
+def inject_csrf_token():
+    return dict(csrf_token=get_csrf_token)
+
+@app.before_request
+def csrf_protect():
+    if request.method in ('POST', 'PUT', 'PATCH', 'DELETE'):
+        # Exempt public authentication / onboarding endpoints
+        exempt_prefixes = (
+            '/api/login',
+            '/api/register',
+            '/api/hospital/apply',
+            '/api/contact'
+        )
+        if any(request.path.startswith(p) for p in exempt_prefixes):
+            return None
+
+        # State-changing requests from authenticated sessions must have valid CSRF token
+        if 'user_id' in session:
+            token = request.headers.get('X-CSRF-Token') or request.form.get('csrf_token')
+            expected = session.get('_csrf_token')
+            if not token or not expected or not secrets.compare_digest(str(token), str(expected)):
+                return jsonify({'error': 'CSRF token missing or invalid. Please refresh the page.'}), 403
 
 
 # ── Helper: Haversine Distance Formula ──────────────────────────────────────
@@ -75,11 +106,13 @@ def login_required(f):
     return decorated
 
 
+
 # ════════════════════════════════════════════════════════════════════════════
 # PAGE ROUTES — Serve HTML templates
 # ════════════════════════════════════════════════════════════════════════════
 
 @app.route('/')
+@app.route('/landing')
 def index():
     return render_template('index.html')
 
@@ -155,8 +188,8 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Authenticate user and start Flask session."""
-    data = request.get_json()
+    """Authenticate user and start Flask session. Supports user, admin, and hospital roles."""
+    data = request.get_json() or {}
     email    = data.get('email', '').strip().lower()
     password = data.get('password', '')
 
@@ -167,22 +200,70 @@ def login():
         cur = mysql.connection.cursor()
         cur.execute('SELECT * FROM users WHERE email = %s', (email,))
         user = cur.fetchone()
+
+        if user and check_password_hash(user['password'], password):
+            # Check user status
+            if not user.get('is_active', 1):
+                cur.close()
+                return jsonify({'error': 'Your user account has been deactivated. Please contact an administrator.'}), 403
+
+            # If hospital role, verify associated hospital is active
+            if user['role'] == 'hospital':
+                hosp_id = user.get('hospital_id')
+                if not hosp_id:
+                    cur.close()
+                    return jsonify({'error': 'No hospital facility is linked to this account.'}), 403
+                cur.execute('SELECT id, name, is_active FROM hospitals WHERE id = %s', (hosp_id,))
+                hosp = cur.fetchone()
+                if not hosp or not hosp.get('is_active', 1):
+                    cur.close()
+                    return jsonify({'error': 'Your hospital account has been deactivated. Please contact administration.'}), 403
+
+            cur.close()
+
+            # Prevent session fixation by clearing session before login
+            session.clear()
+            session['user_id']     = user['id']
+            session['user_name']   = user['name']
+            session['user_email']  = user['email']
+            session['user_role']   = user['role']
+            session['hospital_id'] = user.get('hospital_id')
+            session['_csrf_token'] = secrets.token_hex(32)
+
+            target_redirect = '/admin/dashboard' if user['role'] == 'admin' else ('/hospital/dashboard' if user['role'] == 'hospital' else '/dashboard')
+            return jsonify({
+                'message': 'Login successful',
+                'role': user['role'],
+                'hospital_id': user.get('hospital_id'),
+                'redirect': target_redirect,
+                'user': {
+                    'id': user['id'],
+                    'name': user['name'],
+                    'email': user['email'],
+                    'role': user['role'],
+                    'hospital_id': user.get('hospital_id')
+                }
+            }), 200
+
+        # Login credentials did not match users table. Check hospital_applications for status
+        cur.execute('SELECT status, admin_note FROM hospital_applications WHERE email = %s', (email,))
+        app_record = cur.fetchone()
         cur.close()
 
-        if not user or not check_password_hash(user['password'], password):
-            return jsonify({'error': 'Invalid email or password'}), 401
+        if app_record:
+            if app_record['status'] == 'pending':
+                return jsonify({
+                    'error': 'Your hospital registration is currently pending administrative review. You will be able to log in once your application is verified and approved.'
+                }), 403
+            elif app_record['status'] == 'rejected':
+                reason = f": {app_record['admin_note']}" if app_record.get('admin_note') else ""
+                return jsonify({
+                    'error': f'Your hospital registration application was rejected{reason}. Please contact administration.'
+                }), 403
 
-        session['user_id']    = user['id']
-        session['user_name']  = user['name']
-        session['user_email'] = user['email']
-        session['user_role']  = user['role']
-
-        return jsonify({
-            'message': 'Login successful',
-            'user': {'id': user['id'], 'name': user['name'], 'email': user['email'], 'role': user['role']}
-        }), 200
+        return jsonify({'error': 'Invalid email or password'}), 401
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Login error. Please try again later.'}), 500
 
 
 @app.route('/api/logout', methods=['POST'])
@@ -197,11 +278,13 @@ def logout():
 def get_user():
     """Return currently logged-in user info from session."""
     return jsonify({
-        'id':    session.get('user_id'),
-        'name':  session.get('user_name'),
-        'email': session.get('user_email'),
-        'role':  session.get('user_role', 'user')
+        'id':          session.get('user_id'),
+        'name':        session.get('user_name'),
+        'email':       session.get('user_email'),
+        'role':        session.get('user_role', 'user'),
+        'hospital_id': session.get('hospital_id')
     }), 200
+
 
 
 @app.route('/api/user/profile', methods=['GET'])
@@ -256,7 +339,7 @@ def get_user_profile():
 
 @app.route('/api/hospitals', methods=['GET'])
 def get_hospitals():
-    """Return all hospitals ordered by distance using Haversine formula."""
+    """Return all active hospitals ordered by distance using Haversine formula."""
     try:
         # Default to Palghar center if no coords provided
         lat = request.args.get('lat', 19.6967)
@@ -269,7 +352,7 @@ def get_hospitals():
             user_lat, user_lng = 19.6967, 72.7670
 
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM hospitals')
+        cur.execute('SELECT * FROM hospitals WHERE is_active = 1')
         hospitals = cur.fetchall()
         cur.close()
         
@@ -279,6 +362,8 @@ def get_hospitals():
             h['distance_km'] = round(
                 haversine(user_lat, user_lng, h['latitude'], h['longitude']), 2
             )
+            if h.get('beds_updated_at'):
+                h['beds_updated_at'] = str(h['beds_updated_at'])
             
         # Sort by distance
         hospitals_sorted = sorted(hospitals, key=lambda x: x['distance_km'])
@@ -289,16 +374,18 @@ def get_hospitals():
 
 @app.route('/api/hospitals/<int:hospital_id>', methods=['GET'])
 def get_hospital(hospital_id):
-    """Return details for a single hospital."""
+    """Return details for a single active hospital."""
     try:
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM hospitals WHERE id = %s', (hospital_id,))
+        cur.execute('SELECT * FROM hospitals WHERE id = %s AND is_active = 1', (hospital_id,))
         hospital = cur.fetchone()
         cur.close()
         if not hospital:
             return jsonify({'error': 'Hospital not found'}), 404
         hospital['latitude'] = float(hospital['latitude'])
         hospital['longitude'] = float(hospital['longitude'])
+        if hospital.get('beds_updated_at'):
+            hospital['beds_updated_at'] = str(hospital['beds_updated_at'])
         return jsonify({'hospital': hospital}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -347,10 +434,8 @@ def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
     """
     Query registered MySQL partner hospitals within radius using
     a bounding-box prefilter + SQL Haversine formula.
+    Filters is_active = 1 and includes beds_updated_at.
     """
-    if facility_type in ('clinic', 'doctors'):
-        return []
-
     delta_lat = radius / 111.045
     min_lat = lat - delta_lat
     max_lat = lat + delta_lat
@@ -365,9 +450,10 @@ def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
         max_lng = 180.0
 
     query = """
-        SELECT id, name, location, latitude, longitude,
+        SELECT id, name, type, location, address, latitude, longitude,
                total_beds, available_beds, icu_beds, available_icu,
                ventilators, available_ventilators, contact, speciality,
+               open_24h, hours_note, is_active, beds_updated_at,
                (6371 * 2 * ASIN(SQRT(
                    POWER(SIN(RADIANS(latitude - %s) / 2), 2) +
                    COS(RADIANS(%s)) * COS(RADIANS(latitude)) *
@@ -376,6 +462,7 @@ def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
         FROM hospitals
         WHERE latitude BETWEEN %s AND %s
           AND longitude BETWEEN %s AND %s
+          AND is_active = 1
         HAVING distance_km <= %s
         ORDER BY distance_km ASC
     """
@@ -384,10 +471,13 @@ def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
 
     db_normalized = []
     for h in rows:
+        h_type = h.get('type', 'hospital')
+        if facility_type in ('hospital', 'clinic') and h_type != facility_type:
+            continue
         db_normalized.append({
             "id": h['id'],
             "name": h['name'],
-            "type": "hospital",
+            "type": h_type,
             "lat": float(h['latitude']),
             "lng": float(h['longitude']),
             "distance_km": round(float(h['distance_km']), 2),
@@ -401,9 +491,14 @@ def query_db_hospitals(cur, lat, lng, radius, facility_type='all'):
             "ventilators": int(h.get('ventilators', 0)),
             "available_ventilators": int(h.get('available_ventilators', 0)),
             "location": h.get('location', ''),
+            "address": h.get('address', ''),
+            "open_24h": bool(h.get('open_24h', 1)),
+            "hours_note": h.get('hours_note', ''),
+            "beds_updated_at": str(h['beds_updated_at']) if h.get('beds_updated_at') else None,
             "speciality": h.get('speciality', 'General')
         })
     return db_normalized
+
 
 
 @app.route('/api/hospitals/nearest', methods=['GET'])
@@ -685,7 +780,7 @@ def create_emergency():
 
     try:
         cur = mysql.connection.cursor()
-        cur.execute('SELECT * FROM hospitals WHERE available_beds > 0')
+        cur.execute('SELECT * FROM hospitals WHERE available_beds > 0 AND is_active = 1')
         available_hospitals = cur.fetchall()
 
         if not available_hospitals:
@@ -711,19 +806,26 @@ def create_emergency():
         mysql.connection.begin()
         try:
             cur.execute(
-                'SELECT available_beds FROM hospitals WHERE id = %s FOR UPDATE',
+                'SELECT available_beds, available_icu FROM hospitals WHERE id = %s FOR UPDATE',
                 (assigned_hospital_id,)
             )
             locked = cur.fetchone()
-            if locked['available_beds'] < 1:
+            if not locked or locked['available_beds'] < 1:
                 mysql.connection.rollback()
                 cur.close()
                 return jsonify({'error': 'Selected hospital just became full. Please retry.'}), 409
 
-            cur.execute(
-                'UPDATE hospitals SET available_beds = available_beds - 1 WHERE id = %s',
-                (assigned_hospital_id,)
-            )
+            if priority == 'critical' and locked.get('available_icu', 0) > 0:
+                cur.execute(
+                    'UPDATE hospitals SET available_beds = available_beds - 1, available_icu = available_icu - 1, beds_updated_at = NOW() WHERE id = %s',
+                    (assigned_hospital_id,)
+                )
+            else:
+                cur.execute(
+                    'UPDATE hospitals SET available_beds = available_beds - 1, beds_updated_at = NOW() WHERE id = %s',
+                    (assigned_hospital_id,)
+                )
+
             cur.execute(
                 '''INSERT INTO emergency_requests
                    (user_id, hospital_id, patient_name, description, priority, status)
@@ -733,7 +835,7 @@ def create_emergency():
             mysql.connection.commit()
 
             # Broadcast bed update for assigned hospital
-            cur.execute('SELECT available_beds, total_beds, available_icu, available_ventilators FROM hospitals WHERE id = %s', (assigned_hospital_id,))
+            cur.execute('SELECT available_beds, total_beds, available_icu, icu_beds, available_ventilators, ventilators FROM hospitals WHERE id = %s', (assigned_hospital_id,))
             updated_assigned = cur.fetchone()
             if updated_assigned:
                 broadcaster.broadcast({
@@ -742,8 +844,11 @@ def create_emergency():
                     'available_beds': updated_assigned['available_beds'],
                     'total_beds': updated_assigned['total_beds'],
                     'available_icu': updated_assigned['available_icu'],
-                    'available_ventilators': updated_assigned['available_ventilators']
+                    'icu_beds': updated_assigned['icu_beds'],
+                    'available_ventilators': updated_assigned['available_ventilators'],
+                    'ventilators': updated_assigned['ventilators']
                 })
+
         except Exception as tx_err:
             mysql.connection.rollback()
             cur.close()
@@ -939,5 +1044,10 @@ from admin_routes import admin_bp, admin_api_bp
 app.register_blueprint(admin_bp, url_prefix='/admin')
 app.register_blueprint(admin_api_bp, url_prefix='/api/admin')
 
+from hospital_routes import hospital_bp, hospital_api_bp
+app.register_blueprint(hospital_bp)
+app.register_blueprint(hospital_api_bp)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+

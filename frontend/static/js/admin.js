@@ -1,5 +1,11 @@
 /* admin.js - Logic for the Arogya Map Admin Panel */
 
+// ===== CSRF HELPER =====
+function getCsrfHeader() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta && meta.content ? { 'X-CSRF-Token': meta.content } : {};
+}
+
 // ===== DASHBOARD LOGIC =====
 async function fetchAdminDashboardStats() {
     try {
@@ -10,13 +16,28 @@ async function fetchAdminDashboardStats() {
         }
         const data = await response.json();
         
-        document.getElementById('stat-hospitals').textContent = data.total_hospitals;
-        document.getElementById('stat-beds').textContent = data.total_beds;
-        document.getElementById('stat-requests').textContent = data.requests_today;
-        document.getElementById('stat-users').textContent = data.total_users;
+        const statHosp = document.getElementById('stat-hospitals');
+        if (statHosp) statHosp.textContent = data.total_hospitals;
+        const statBeds = document.getElementById('stat-beds');
+        if (statBeds) statBeds.textContent = data.total_beds;
+        const statReqs = document.getElementById('stat-requests');
+        if (statReqs) statReqs.textContent = data.requests_today;
+        const statUsers = document.getElementById('stat-users');
+        if (statUsers) statUsers.textContent = data.total_users;
+
+        const statPending = document.getElementById('stat-pending-apps');
+        if (statPending && data.pending_applications !== undefined) {
+            statPending.textContent = data.pending_applications;
+        }
+
+        const badge = document.getElementById('pending-apps-badge');
+        if (badge && data.pending_applications !== undefined) {
+            badge.textContent = data.pending_applications;
+            badge.style.display = data.pending_applications > 0 ? 'inline-block' : 'none';
+        }
 
         const hospBody = document.getElementById('hospital-capacity-body');
-        if (hospBody) {
+        if (hospBody && data.hospitals_overview) {
             hospBody.innerHTML = '';
             data.hospitals_overview.forEach(h => {
                 let statusDot = 'green';
@@ -34,7 +55,7 @@ async function fetchAdminDashboardStats() {
         }
 
         const reqBody = document.getElementById('recent-requests-body');
-        if (reqBody) {
+        if (reqBody && data.recent_requests) {
             reqBody.innerHTML = '';
             data.recent_requests.forEach(r => {
                 reqBody.innerHTML += `
@@ -74,14 +95,14 @@ function renderHospitals(hospitals) {
         const status = h.is_active ? '<span class="badge low">Active</span>' : '<span class="badge critical">Inactive</span>';
         tbody.innerHTML += `
             <tr>
-                <td><strong>${h.name}</strong></td>
+                <td><strong>${h.name}</strong> <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">(${h.type || 'hospital'})</span></td>
                 <td>${h.location}</td>
                 <td>${h.total_beds} / <span style="color: var(--teal); font-weight: bold;">${h.available_beds}</span></td>
                 <td>${h.icu_beds} / <span style="color: var(--teal); font-weight: bold;">${h.available_icu}</span></td>
                 <td>${status}</td>
                 <td class="admin-actions">
                     <button class="btn btn-outline" onclick="openHospitalModal(${h.id})"><i class="fa fa-pen"></i></button>
-                    <button class="btn btn-outline" onclick="openBedUpdateModal(${h.id}, '${h.name}', ${h.available_beds}, ${h.available_icu})"><i class="fa fa-bed"></i></button>
+                    <button class="btn btn-outline" onclick="openBedUpdateModal(${h.id}, '${h.name.replace(/'/g, "\\'")}', ${h.available_beds}, ${h.available_icu})"><i class="fa fa-bed"></i></button>
                     <button class="btn btn-outline" onclick="toggleHospitalStatus(${h.id}, ${!h.is_active})" title="${h.is_active ? 'Deactivate' : 'Activate'}">
                         <i class="fa fa-power-off"></i>
                     </button>
@@ -94,42 +115,42 @@ function renderHospitals(hospitals) {
 
 function filterHospitals() {
     const term = document.getElementById('hospital-search').value.toLowerCase();
-    const filtered = allHospitals.filter(h => h.name.toLowerCase().includes(term) || h.location.toLowerCase().includes(term));
+    const filtered = allHospitals.filter(h => h.name.toLowerCase().includes(term) || (h.location && h.location.toLowerCase().includes(term)));
     renderHospitals(filtered);
 }
 
-function openHospitalModal(hId = null) {
-    document.getElementById('hospital-form').reset();
-    document.getElementById('h_id').value = '';
-    document.getElementById('hospital-modal-title').innerHTML = '<i class="fa fa-hospital" style="color: var(--teal);"></i> Add Hospital';
+function openHospitalModal(id = null) {
+    const isEdit = id !== null;
+    document.getElementById('hospitalModalTitle').textContent = isEdit ? 'Edit Hospital' : 'Add Hospital';
+    document.getElementById('h_id').value = id || '';
 
-    if (hId) {
-        const h = allHospitals.find(x => x.id === hId);
+    if (isEdit) {
+        const h = allHospitals.find(x => x.id === id);
         if (h) {
-            document.getElementById('hospital-modal-title').innerHTML = '<i class="fa fa-hospital" style="color: var(--teal);"></i> Edit Hospital';
-            document.getElementById('h_id').value = h.id;
             document.getElementById('h_name').value = h.name;
-            document.getElementById('h_contact').value = h.contact;
-            document.getElementById('h_location').value = h.location;
+            document.getElementById('h_loc').value = h.location;
+            document.getElementById('h_contact').value = h.contact || '';
             document.getElementById('h_lat').value = h.latitude;
             document.getElementById('h_lng').value = h.longitude;
             document.getElementById('h_tb').value = h.total_beds;
             document.getElementById('h_ab').value = h.available_beds;
             document.getElementById('h_ticu').value = h.icu_beds;
             document.getElementById('h_aicu').value = h.available_icu;
-            document.getElementById('h_active').value = h.is_active ? "true" : "false";
+            document.getElementById('h_active').value = h.is_active ? 'true' : 'false';
         }
+    } else {
+        document.getElementById('hospital-form').reset();
     }
     toggleModal('hospitalModal', true);
 }
 
-async function submitHospitalForm(e) {
+async function submitHospital(e) {
     e.preventDefault();
     const hId = document.getElementById('h_id').value;
     const body = {
         name: document.getElementById('h_name').value,
+        location: document.getElementById('h_loc').value,
         contact: document.getElementById('h_contact').value,
-        location: document.getElementById('h_location').value,
         latitude: parseFloat(document.getElementById('h_lat').value),
         longitude: parseFloat(document.getElementById('h_lng').value),
         total_beds: parseInt(document.getElementById('h_tb').value),
@@ -145,7 +166,7 @@ async function submitHospitalForm(e) {
     try {
         const res = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
             body: JSON.stringify(body)
         });
         const data = await res.json();
@@ -169,8 +190,6 @@ function openBedUpdateModal(id, name, gen, icu) {
 async function submitBedUpdate(e) {
     e.preventDefault();
     const hId = document.getElementById('b_h_id').value;
-    
-    // Fetch current hosp, patch available_beds
     const h = allHospitals.find(x => x.id == hId);
     if (!h) return;
 
@@ -180,7 +199,7 @@ async function submitBedUpdate(e) {
     try {
         const res = await fetch(`/api/admin/hospitals/${hId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
             body: JSON.stringify(h)
         });
         if(!res.ok) throw new Error('Failed to update beds');
@@ -196,7 +215,7 @@ async function toggleHospitalStatus(hId, newStatus) {
     try {
         const res = await fetch(`/api/admin/hospitals/${hId}/status`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
             body: JSON.stringify({ is_active: newStatus })
         });
         if (!res.ok) throw new Error('Failed to update status');
@@ -208,7 +227,10 @@ async function toggleHospitalStatus(hId, newStatus) {
 async function deleteHospital(hId) {
     if(!confirm("Are you sure you want to delete this hospital? This action cannot be undone.")) return;
     try {
-        const res = await fetch(`/api/admin/hospitals/${hId}`, { method: 'DELETE' });
+        const res = await fetch(`/api/admin/hospitals/${hId}`, {
+            method: 'DELETE',
+            headers: { ...getCsrfHeader() }
+        });
         if(!res.ok) throw new Error('Failed to delete hospital');
         showToast('Hospital deleted', 'success');
         fetchAdminHospitals();
@@ -224,7 +246,6 @@ async function fetchAdminPatients() {
         if (!res.ok) throw new Error('Failed to fetch patients');
         allPatients = await res.json();
         
-        // Also load hospitals for assign select
         const hRes = await fetch('/api/admin/hospitals');
         if (hRes.ok) {
             const hosps = await hRes.json();
@@ -281,7 +302,9 @@ async function submitAssignHospital(e) {
 
     try {
         const res = await fetch(`/api/admin/patients/${pId}/assign`, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hospital_id: parseInt(hId) })
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
+            body: JSON.stringify({ hospital_id: parseInt(hId) })
         });
         if(!res.ok) throw new Error('Assign Failed');
         showToast('Hospital assigned successfully', 'success');
@@ -302,7 +325,9 @@ async function submitUpdateStatus(e) {
     const status = document.getElementById('s_status').value;
     try {
         const res = await fetch(`/api/admin/patients/${pId}/status`, {
-            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
+            body: JSON.stringify({ status })
         });
         if(!res.ok) throw new Error('Update Failed');
         showToast('Status updated successfully', 'success');
@@ -320,7 +345,8 @@ async function fetchAdminUsers() {
         const res = await fetch('/api/admin/users');
         if (!res.ok) throw new Error('Failed to fetch users');
         allUsers = await res.json();
-        document.getElementById('total-users-badge').textContent = allUsers.length;
+        const badge = document.getElementById('total-users-badge');
+        if (badge) badge.textContent = allUsers.length;
         filterUsers();
     } catch (e) { showToast(e.message, 'error'); }
 }
@@ -333,20 +359,23 @@ function filterUsers() {
     if (!tbody) return;
     tbody.innerHTML = '';
     filtered.forEach(u => {
-        const roleCls = u.role === 'admin' ? 'admin' : 'user';
+        const roleCls = u.role === 'admin' ? 'admin' : (u.role === 'hospital' ? 'hospital' : 'user');
         const stCls = u.is_active ? 'active' : 'inactive';
+        const hospName = u.hospital_name || (u.hospital_id ? `Hospital #${u.hospital_id}` : '-');
+
         tbody.innerHTML += `
             <tr>
                 <td>${u.id}</td>
                 <td><strong>${u.name}</strong></td>
                 <td>${u.email}</td>
-                <td><span class="role-badge ${roleCls}">${u.role}</span></td>
+                <td><span class="role-badge ${roleCls}">${u.role.toUpperCase()}</span></td>
+                <td><small style="color: var(--teal); font-weight: 500;">${hospName}</small></td>
                 <td><span class="status-badge ${stCls}">${u.is_active?'Active':'Inactive'}</span></td>
                 <td>${u.created_at || '-'}</td>
                 <td>${u.health_entries} <a href="#" onclick="viewHealthData(${u.id}); return false;" style="color: var(--teal); margin-left: 8px;"><i class="fa fa-eye"></i></a></td>
                 <td class="admin-actions">
-                    <button class="btn btn-outline" onclick="toggleUserStatus(${u.id}, ${!u.is_active})" title=${u.is_active?"Deactivate":"Activate"}><i class="fa ${u.is_active ? 'fa-ban' : 'fa-check'}"></i></button>
-                    <button class="btn btn-outline" onclick="askRoleChange(${u.id}, '${u.name}', '${u.role}')" title="Change Role"><i class="fa fa-id-card"></i></button>
+                    <button class="btn btn-outline" onclick="toggleUserStatus(${u.id}, ${!u.is_active})" title="${u.is_active ? 'Deactivate' : 'Activate'}"><i class="fa ${u.is_active ? 'fa-ban' : 'fa-check'}"></i></button>
+                    <button class="btn btn-outline" onclick="openRoleModal(${u.id}, '${u.name.replace(/'/g, "\\'")}', '${u.role}', ${u.hospital_id || 'null'})" title="Change Role"><i class="fa fa-id-card"></i></button>
                 </td>
             </tr>
         `;
@@ -356,32 +385,80 @@ function filterUsers() {
 async function toggleUserStatus(uId, isActive) {
     try {
         const res = await fetch(`/api/admin/users/${uId}/status`, {
-            method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({is_active: isActive})
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json', ...getCsrfHeader()},
+            body: JSON.stringify({is_active: isActive})
         });
-        if(!res.ok) throw new Error("Failed");
+        if(!res.ok) throw new Error("Failed to update user status");
         fetchAdminUsers();
     } catch(e) { showToast(e.message, 'error'); }
 }
 
-let pendingRoleChange = null;
-function askRoleChange(uId, name, currRole) {
-    pendingRoleChange = { uId, role: currRole === 'admin' ? 'user' : 'admin' };
+let currentEditUserId = null;
+async function openRoleModal(uId, name, currRole, currHospitalId) {
+    currentEditUserId = uId;
     document.getElementById('r_user_name').textContent = name;
-    document.getElementById('r_new_role').textContent = pendingRoleChange.role.toUpperCase();
+    const roleSelect = document.getElementById('role_select');
+    if (roleSelect) roleSelect.value = currRole || 'user';
+    
+    // Load hospitals for picker
+    const hospSelect = document.getElementById('role_hospital_id');
+    if (hospSelect && hospSelect.options.length <= 1) {
+        try {
+            const res = await fetch('/api/admin/hospitals');
+            if (res.ok) {
+                const hosps = await res.json();
+                hospSelect.innerHTML = '<option value="">-- Choose Hospital --</option>' +
+                    hosps.map(h => `<option value="${h.id}">${h.name} (${h.location})</option>`).join('');
+            }
+        } catch(e) {}
+    }
+    if (hospSelect && currHospitalId) {
+        hospSelect.value = currHospitalId;
+    }
+    const pickerGroup = document.getElementById('role_hospital_picker_group');
+    if (pickerGroup) {
+        pickerGroup.style.display = (currRole === 'hospital') ? 'block' : 'none';
+    }
     toggleModal('roleModal', true);
 }
 
-async function confirmRoleChange() {
-    if (!pendingRoleChange) return;
+function onRoleSelectChange() {
+    const role = document.getElementById('role_select').value;
+    const pickerGroup = document.getElementById('role_hospital_picker_group');
+    if (pickerGroup) {
+        pickerGroup.style.display = (role === 'hospital') ? 'block' : 'none';
+    }
+}
+
+async function submitRoleChange(e) {
+    if (e) e.preventDefault();
+    if (!currentEditUserId) return;
+    const role = document.getElementById('role_select').value;
+    let hospitalId = null;
+    if (role === 'hospital') {
+        const val = document.getElementById('role_hospital_id').value;
+        if (!val) {
+            showToast('Please select a hospital to assign', 'error');
+            return;
+        }
+        hospitalId = parseInt(val);
+    }
+
     try {
-        const res = await fetch(`/api/admin/users/${pendingRoleChange.uId}/role`, {
-            method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({role: pendingRoleChange.role})
+        const res = await fetch(`/api/admin/users/${currentEditUserId}/role`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
+            body: JSON.stringify({ role, hospital_id: hospitalId })
         });
-        if(!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update user role');
         toggleModal('roleModal', false);
         fetchAdminUsers();
-        showToast('Role updated', 'success');
-    } catch(e) { showToast(e.message, 'error'); }
+        showToast('Role updated successfully', 'success');
+    } catch(e) {
+        showToast(e.message, 'error');
+    }
 }
 
 async function viewHealthData(uId) {
@@ -414,6 +491,136 @@ async function viewHealthData(uId) {
     } catch(e) { showToast(e.message, 'error'); }
 }
 
+
+// ===== HOSPITAL APPLICATIONS LOGIC =====
+let allApplications = [];
+let applicationMap = null;
+let applicationMarker = null;
+
+async function fetchAdminApplications(status = 'all') {
+    try {
+        const res = await fetch(`/api/admin/applications?status=${status}`);
+        if (!res.ok) throw new Error('Failed to fetch applications');
+        allApplications = await res.json();
+        renderApplications(allApplications);
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+function renderApplications(apps) {
+    const tbody = document.getElementById('applications-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    if (!apps || apps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No applications found.</td></tr>';
+        return;
+    }
+    apps.forEach(app => {
+        let badgeCls = 'medium';
+        if (app.status === 'approved') badgeCls = 'low';
+        else if (app.status === 'rejected') badgeCls = 'critical';
+
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>#${app.id}</strong></td>
+                <td><strong>${app.hospital_name}</strong> <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">(${app.type})</span></td>
+                <td><code>${app.registration_number}</code></td>
+                <td>${app.contact_person}</td>
+                <td><a href="mailto:${app.email}" style="color: var(--teal);">${app.email}</a><br><small style="color: var(--text-muted);">${app.phone}</small></td>
+                <td><span class="badge ${badgeCls}">${app.status.toUpperCase()}</span></td>
+                <td>${app.created_at || '-'}</td>
+                <td class="admin-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openApplicationReviewModal(${app.id})" title="Review Application">
+                        <i class="fa fa-magnifying-glass"></i> Review
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function filterApplications() {
+    const status = document.getElementById('filter-app-status')?.value || 'all';
+    fetchAdminApplications(status);
+}
+
+let currentReviewApp = null;
+function openApplicationReviewModal(appId) {
+    currentReviewApp = allApplications.find(a => a.id === appId);
+    if (!currentReviewApp) return;
+
+    document.getElementById('rev_hosp_name').textContent = currentReviewApp.hospital_name;
+    document.getElementById('rev_type').textContent = currentReviewApp.type.toUpperCase();
+    document.getElementById('rev_reg_num').textContent = currentReviewApp.registration_number;
+    document.getElementById('rev_contact').textContent = `${currentReviewApp.contact_person} (${currentReviewApp.phone}, ${currentReviewApp.email})`;
+    document.getElementById('rev_address').textContent = currentReviewApp.address;
+    document.getElementById('rev_coords').textContent = `${currentReviewApp.latitude}, ${currentReviewApp.longitude}`;
+    document.getElementById('rev_note').value = currentReviewApp.admin_note || '';
+
+    const actionButtons = document.getElementById('rev_action_buttons');
+    if (actionButtons) {
+        actionButtons.style.display = (currentReviewApp.status === 'pending') ? 'flex' : 'none';
+    }
+    const statusMsg = document.getElementById('rev_status_message');
+    if (statusMsg) {
+        if (currentReviewApp.status !== 'pending') {
+            statusMsg.style.display = 'block';
+            statusMsg.innerHTML = `This application has already been <strong>${currentReviewApp.status}</strong> by ${currentReviewApp.reviewer_name || 'Admin'} on ${currentReviewApp.reviewed_at || ''}.`;
+        } else {
+            statusMsg.style.display = 'none';
+        }
+    }
+
+    toggleModal('applicationReviewModal', true);
+
+    // Initialize or re-center Leaflet map preview
+    setTimeout(() => {
+        const mapContainer = document.getElementById('app-review-map');
+        if (!mapContainer || typeof L === 'undefined') return;
+        const lat = currentReviewApp.latitude;
+        const lng = currentReviewApp.longitude;
+        if (!applicationMap) {
+            applicationMap = L.map('app-review-map').setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(applicationMap);
+            applicationMarker = L.marker([lat, lng]).addTo(applicationMap);
+        } else {
+            applicationMap.invalidateSize();
+            applicationMap.setView([lat, lng], 14);
+            applicationMarker.setLatLng([lat, lng]);
+        }
+    }, 200);
+}
+
+async function submitApplicationDecision(action) {
+    if (!currentReviewApp) return;
+    const note = document.getElementById('rev_note').value.trim();
+    if (action === 'reject' && !note) {
+        if (!confirm("Reject without an administrative note explaining the reason?")) return;
+    }
+    if (!confirm(`Are you sure you want to ${action.toUpperCase()} this hospital registration application?`)) return;
+
+    try {
+        const res = await fetch(`/api/admin/applications/${currentReviewApp.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getCsrfHeader() },
+            body: JSON.stringify({ action, note })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to review application');
+        showToast(data.message || `Application ${action}d successfully`, 'success');
+        toggleModal('applicationReviewModal', false);
+        const status = document.getElementById('filter-app-status')?.value || 'all';
+        fetchAdminApplications(status);
+        fetchAdminDashboardStats();
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+}
+
+
 // ===== REPORTS LOGIC =====
 async function fetchAdminReports() {
     try {
@@ -432,7 +639,6 @@ async function fetchAdminReports() {
         }
 
         const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim() || '#1ABC9C';
-        const darkColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-glass').trim() || 'rgba(30,30,40,0.8)';
         
         const commonOptions = {
             responsive: true, maintainAspectRatio: false,
@@ -495,4 +701,20 @@ async function fetchAdminReports() {
             });
         }
     } catch(e) { console.error("Reports init failed:", e); }
+}
+
+// ===== UTILS =====
+function toggleModal(id, show) {
+    const m = document.getElementById(id);
+    if(m) {
+        if(show) m.classList.add('active');
+        else m.classList.remove('active');
+    }
+}
+
+function toggleSidebar() {
+    const s = document.getElementById('sidebar');
+    const o = document.getElementById('sidebar-overlay');
+    if(s) s.classList.toggle('active');
+    if(o) o.classList.toggle('active');
 }

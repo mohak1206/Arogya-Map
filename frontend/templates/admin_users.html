@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin | Users</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -19,6 +20,7 @@
         .role-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; text-transform: capitalize; }
         .role-badge.admin { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; } 
         .role-badge.user { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+        .role-badge.hospital { background: rgba(0, 212, 170, 0.2); color: var(--teal); }
         
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
         .status-badge.active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
@@ -42,6 +44,7 @@
         <nav class="sidebar-nav">
             <div class="sidebar-nav-label">Command Center</div>
             <a href="/admin/dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/admin/hospital-applications"><i class="fa-solid fa-file-signature"></i> Applications <span class="badge pending" id="pending-apps-badge" style="display:none; font-size:0.65rem; margin-left: 6px;">0</span></a>
             <a href="/admin/hospitals"><i class="fa-solid fa-hospital"></i> Hospitals</a>
             <a href="/admin/patients"><i class="fa-solid fa-truck-medical"></i> Patients</a>
             <a href="/admin/users" class="active"><i class="fa-solid fa-users"></i> Users</a>
@@ -91,6 +94,7 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Assigned Hospital</th>
                         <th>Status</th>
                         <th>Joined Date</th>
                         <th>Health Entries</th>
@@ -140,15 +144,44 @@
         </div>
     </div>
 
-    <!-- Role Confirm Modal -->
+    <!-- 3-Role Assignment Modal with Hospital Picker -->
     <div id="roleModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 400px;">
-            <h2><i class="fa-solid fa-triangle-exclamation" style="color: var(--amber);"></i> Change User Role</h2>
-            <p style="margin: 16px 0;">Are you sure you want to change <span id="r_user_name" style="font-weight: bold;"></span>'s role to <span id="r_new_role" style="font-weight: bold; color: var(--teal);"></span>?</p>
-            <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <button class="btn btn-outline" style="flex: 1;" onclick="toggleModal('roleModal', false)">Cancel</button>
-                <button class="btn btn-primary" style="flex: 1;" onclick="confirmRoleChange()">Confirm</button>
+        <div class="modal-content" style="max-width: 440px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2><i class="fa-solid fa-id-card" style="color: var(--teal);"></i> Manage User Role</h2>
+                <button class="btn btn-ghost" onclick="toggleModal('roleModal', false)"><i class="fa-solid fa-times"></i></button>
             </div>
+            <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-muted);">
+                Updating role permissions for: <strong id="r_user_name" style="color: var(--text-primary);"></strong>
+            </p>
+
+            <form onsubmit="submitRoleChange(event)">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="role_select" style="display: block; margin-bottom: 6px; font-weight: 500;">Role Selection</label>
+                    <select id="role_select" class="form-control" onchange="onRoleSelectChange()" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15);">
+                        <option value="user">User (Standard Patient Account)</option>
+                        <option value="admin">Admin (System Administrator)</option>
+                        <option value="hospital">Hospital (Verified Facility Staff)</option>
+                    </select>
+                </div>
+
+                <div id="role_hospital_picker_group" class="form-group" style="display: none; margin-bottom: 20px;">
+                    <label for="role_hospital_id" style="display: block; margin-bottom: 6px; font-weight: 500;">
+                        <i class="fa-solid fa-hospital" style="color: var(--teal);"></i> Assigned Hospital
+                    </label>
+                    <select id="role_hospital_id" class="form-control" style="width: 100%; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.06); color: white; border: 1px solid rgba(255,255,255,0.15);">
+                        <option value="">-- Choose Hospital --</option>
+                    </select>
+                    <small style="display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.75rem;">
+                        Hospital staff can only manage the capacity and emergency requests for their assigned facility.
+                    </small>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn btn-outline" style="flex: 1;" onclick="toggleModal('roleModal', false)">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Save Changes</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -158,6 +191,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             fetchAdminUsers();
+            fetchAdminDashboardStats();
         });
     </script>
 </body>

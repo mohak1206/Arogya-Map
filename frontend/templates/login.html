@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Arogya Map — Sign in to your Smart Healthcare Dashboard for real-time hospital tracking and emergency bed management.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sign In — {{ site.name }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
@@ -78,7 +79,12 @@
                     <a href="/signup" style="color: var(--teal); font-weight: 600;">Sign Up</a>
                 </div>
 
-                <div style="margin-top: 16px; text-align: center; font-size: 0.85rem;">
+                <div style="margin-top: 12px; text-align: center; font-size: 0.85rem; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                    Hospital staff?
+                    <a href="/hospital/register" style="color: var(--teal); font-weight: 600;">Register your hospital</a>
+                </div>
+
+                <div style="margin-top: 12px; text-align: center; font-size: 0.85rem;">
                     <a href="/" style="color: var(--text-secondary);">Return to Landing Page</a>
                 </div>
             </div>

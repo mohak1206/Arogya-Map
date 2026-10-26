@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Register your hospital or clinic on Arogya Map to broadcast real-time bed capacity and receive emergency routing.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Hospital & Clinic Registration — Arogya Map</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        .register-container {
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+        .register-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 640px) {
+            .form-grid { grid-template-columns: 1fr; }
+            .register-card { padding: 20px; }
+        }
+        #picker-map {
+            height: 240px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            margin-top: 8px;
+        }
+        .hp-field {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            height: 0;
+            width: 0;
+            pointer-events: none;
+        }
+        .coords-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--teal);
+            background: rgba(0, 212, 170, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 6px;
+        }
+        .success-panel {
+            text-align: center;
+            padding: 48px 24px;
+        }
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(0, 212, 170, 0.15);
+            color: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 20px;
+        }
+        .input-error {
+            border-color: var(--rose) !important;
+            box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.25) !important;
+        }
+        .password-toggle-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .password-toggle-wrap input {
+            width: 100%;
+            padding-right: 40px !important;
+        }
+        .password-toggle-wrap .password-toggle-icon {
+            position: absolute;
+            right: 12px;
+            cursor: pointer;
+            color: var(--text-muted);
+            user-select: none;
+            font-size: 0.95rem;
+            transition: color 0.2s ease;
+        }
+        .password-toggle-wrap .password-toggle-icon:hover {
+            color: var(--teal);
+        }
+        .form-error-alert {
+            background: rgba(244, 63, 94, 0.12);
+            border: 1px solid rgba(244, 63, 94, 0.35);
+            color: var(--rose);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+
+    <!-- Header -->
+    <header class="navbar" style="position: relative;">
+        <div class="container nav-container">
+            <a href="/" class="nav-logo">
+                <i class="fa-solid fa-heart-pulse"></i>
+                <span>Arogya Map</span>
+            </a>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme" id="theme-toggle-btn">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <a href="/login" class="btn btn-outline btn-sm">Staff Login</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="register-container">
+        <div class="register-card" id="apply-card">
+            <div style="margin-bottom: 24px;">
+                <span class="badge" style="background: rgba(0, 212, 170, 0.15); color: var(--teal); font-weight: 600; text-transform: uppercase;">
+                    Healthcare Provider Onboarding
+                </span>
+                <h1 style="font-size: 1.8rem; margin-top: 8px; margin-bottom: 6px;">Register Your Hospital or Clinic</h1>
+                <p style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.5;">
+                    Join the Arogya Map emergency network. Broadcast your available beds, ICU units, and ventilators to emergency seekers in your region.
+                </p>
+            </div>
+
+            <form id="hospital-apply-form" novalidate onsubmit="submitHospitalApplication(event)">
+                <!-- Honeypot anti-spam field -->
+                <input type="text" name="website_url_hp" id="website_url_hp" class="hp-field" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+                <div class="form-grid">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="hospital_name">Hospital or Clinic Name *</label>
+                        <input type="text" id="hospital_name" name="hospital_name" required placeholder="e.g. City Care Multispeciality Hospital" autocomplete="organization">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">Facility Type *</label>
+                        <select id="type" name="type" required style="width: 100%; padding: 12px; border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);">
+                            <option value="hospital">Hospital (General / Specialty)</option>
+                            <option value="clinic">Clinic / Outpatient Center</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registration_number">Official Licence / Registration No. *</label>
+                        <input type="text" id="registration_number" name="registration_number" required placeholder="e.g. MH/REG/2024/8892">
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="address">Full Physical Address *</label>
+                        <textarea id="address" name="address" rows="2" required placeholder="Street address, landmark, city, state, postal code" style="width: 100%; padding: 10px; border-radius: 8px; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);"></textarea>
+                    </div>
+
+                    <!-- Location Pin Picker -->
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <label style="margin: 0;">Pinpoint Exact Facility Location on Map *</label>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="locateUserPosition()" style="font-size: 0.8rem; padding: 4px 10px;">
+                                <i class="fa-solid fa-crosshairs"></i> Use My Current Location
+                            </button>
+                        </div>
+                        <div id="picker-map"></div>
+                        <input type="hidden" id="latitude" name="latitude" value="19.0760">
+                        <input type="hidden" id="longitude" name="longitude" value="72.8777">
+                        <div class="coords-badge" id="coords-display">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span>Selected: 19.0760, 72.8777 (Drag pin to adjust)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_person">Authorized Contact Person *</label>
+                        <input type="text" id="contact_person" name="contact_person" required placeholder="Dr. / Administrator Name" autocomplete="name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Official Telephone / Emergency Phone *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="e.g. 022-26751000 or 9876543210" autocomplete="tel">
+                    </div>
+
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="email">Official Work Email Address *</label>
+                        <input type="email" id="email" name="email" required placeholder="admissions@hospital.org" autocomplete="email">
+                        <small style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-top: 4px;">
+                            This email will be your login username once your application is verified and approved.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Create Password (min. 8 characters) *</label>
+                        <div class="password-toggle-wrap">
+                            <input type="password" id="password" name="password" required minlength="8" placeholder="••••••••" autocomplete="new-password">
+                            <i class="fa-solid fa-eye password-toggle-icon" onclick="togglePasswordVisibility('password', this)" title="Show/Hide Password"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password *</label>
+                        <div class="password-toggle-wrap">
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="8" placeholder="••••••••" autocomplete="new-password">
+                            <i class="fa-solid fa-eye password-toggle-icon" onclick="togglePasswordVisibility('confirm_password', this)" title="Show/Hide Password"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 24px; padding: 12px 16px; border-radius: 8px; background: rgba(0, 212, 170, 0.08); border: 1px solid rgba(0, 212, 170, 0.2); font-size: 0.85rem; color: var(--text-secondary);">
+                    <i class="fa-solid fa-shield-halved" style="color: var(--teal); margin-right: 6px;"></i>
+                    <strong>Verification Guarantee:</strong> To safeguard emergency patients, every application is manually verified by an Arogya Map system administrator before going live.
+                </div>
+
+                <!-- Prominent Inline Error Banner -->
+                <div class="form-error-alert" id="form-error-alert" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size: 1.1rem; flex-shrink: 0;"></i>
+                    <span id="form-error-text">Please review and complete the form.</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="submit-btn" onclick="submitHospitalApplication(event)" style="width: 100%; margin-top: 20px; padding: 14px; font-size: 1rem; font-weight: 600;">
+                    <i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Submit Registration Application
+                </button>
+            </form>
+        </div>
+
+        <!-- Success Message Screen -->
+        <div class="register-card success-panel" id="success-card" style="display: none;">
+            <div class="success-icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 style="font-size: 1.8rem; margin-bottom: 12px;">Application Received</h2>
+            <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6; max-width: 520px; margin: 0 auto 24px;">
+                We'll review your facility credentials and contact you by email once your account is verified.
+            </p>
+            <div style="background: rgba(255,255,255,0.04); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; max-width: 440px; margin: 0 auto 32px; font-size: 0.9rem; text-align: left;">
+                <div style="margin-bottom: 6px;"><strong style="color: var(--teal);">Next Steps:</strong></div>
+                <ul style="padding-left: 20px; color: var(--text-muted); line-height: 1.6;">
+                    <li>An admin manually verifies your licence number and physical location.</li>
+                    <li>Once approved, you will be able to log in at the login page.</li>
+                    <li>You can then broadcast live bed numbers and manage emergency admissions.</li>
+                </ul>
+            </div>
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <a href="/login" class="btn btn-primary" style="padding: 12px 28px;">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Hospital Login
+                </a>
+                <a href="/" class="btn btn-outline" style="padding: 12px 28px;">
+                    Return to Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        let pickerMap = null;
+        let pickerMarker = null;
+
+        function togglePasswordVisibility(inputId, iconElem) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElem.classList.remove('fa-eye');
+                iconElem.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElem.classList.remove('fa-eye-slash');
+                iconElem.classList.add('fa-eye');
+            }
+        }
+
+        function initPickerMap() {
+            try {
+                const defaultLat = 19.0760;
+                const defaultLng = 72.8777;
+
+                pickerMap = L.map('picker-map').setView([defaultLat, defaultLng], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(pickerMap);
+
+                pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(pickerMap);
+
+                pickerMarker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    updateCoordinates(pos.lat, pos.lng);
+                });
+
+                pickerMap.on('click', function(e) {
+                    pickerMarker.setLatLng(e.latlng);
+                    updateCoordinates(e.latlng.lat, e.latlng.lng);
+                });
+            } catch (err) {
+                console.warn('Leaflet map initialization skipped or delayed:', err);
+            }
+        }
+
+        function updateCoordinates(lat, lng) {
+            const roundedLat = parseFloat(lat.toFixed(6));
+            const roundedLng = parseFloat(lng.toFixed(6));
+            const latInput = document.getElementById('latitude');
+            const lngInput = document.getElementById('longitude');
+            if (latInput) latInput.value = roundedLat;
+            if (lngInput) lngInput.value = roundedLng;
+            const display = document.getElementById('coords-display');
+            if (display) {
+                display.innerHTML = `
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span>Selected: ${roundedLat}, ${roundedLng} (Drag pin to adjust)</span>
+                `;
+            }
+        }
+
+        function locateUserPosition() {
+            if (!navigator.geolocation) {
+                showToast("Geolocation is not supported by your browser", "error");
+                return;
+            }
+            showToast("Detecting your coordinates...", "info");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (pickerMap && pickerMarker) {
+                        pickerMap.setView([lat, lng], 15);
+                        pickerMarker.setLatLng([lat, lng]);
+                    }
+                    updateCoordinates(lat, lng);
+                    showToast("Location updated from device GPS", "success");
+                },
+                (err) => {
+                    showToast("Could not retrieve current location: " + err.message, "error");
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+
+        function showFormError(message, targetFieldId) {
+            const alertBox = document.getElementById('form-error-alert');
+            const alertText = document.getElementById('form-error-text');
+            if (alertBox && alertText) {
+                alertText.textContent = message;
+                alertBox.style.display = 'flex';
+            }
+
+            if (typeof showToast === 'function') {
+                showToast(message, 'error');
+            }
+
+            if (targetFieldId) {
+                const elem = document.getElementById(targetFieldId);
+                if (elem) {
+                    elem.classList.add('input-error');
+                    elem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    elem.focus();
+                }
+            }
+        }
+
+        function clearFormErrors() {
+            const alertBox = document.getElementById('form-error-alert');
+            if (alertBox) alertBox.style.display = 'none';
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        }
+
+        async function submitHospitalApplication(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            clearFormErrors();
+
+            const btn = document.getElementById('submit-btn');
+
+            // Gather inputs directly by ID
+            const hospitalNameInput = document.getElementById('hospital_name');
+            const typeInput = document.getElementById('type');
+            const regNumInput = document.getElementById('registration_number');
+            const addressInput = document.getElementById('address');
+            const contactPersonInput = document.getElementById('contact_person');
+            const phoneInput = document.getElementById('phone');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            const latInput = document.getElementById('latitude');
+            const lngInput = document.getElementById('longitude');
+            const hpInput = document.getElementById('website_url_hp');
+
+            const hospitalName = hospitalNameInput ? hospitalNameInput.value.trim() : '';
+            const facilityType = typeInput ? typeInput.value : 'hospital';
+            const regNumber = regNumInput ? regNumInput.value.trim() : '';
+            const address = addressInput ? addressInput.value.trim() : '';
+            const contactPerson = contactPersonInput ? contactPersonInput.value.trim() : '';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
+            const latitude = parseFloat(latInput ? latInput.value : '19.0760') || 19.0760;
+            const longitude = parseFloat(lngInput ? lngInput.value : '72.8777') || 72.8777;
+            const hpVal = hpInput ? hpInput.value.trim() : '';
+
+            // Step-by-step friendly client validation
+            if (!hospitalName || hospitalName.length < 3) {
+                showFormError("Please enter your Hospital or Clinic Name (at least 3 characters).", "hospital_name");
+                return;
+            }
+
+            if (!regNumber || regNumber.length < 2) {
+                showFormError("Please enter your Official Licence or Registration Number.", "registration_number");
+                return;
+            }
+
+            if (!address || address.length < 5) {
+                showFormError("Please enter the full physical address (at least 5 characters).", "address");
+                return;
+            }
+
+            if (!contactPerson || contactPerson.length < 2) {
+                showFormError("Please enter the authorized contact person's name.", "contact_person");
+                return;
+            }
+
+            const phoneDigits = phone.replace(/[\s\-+()]/g, '');
+            if (!phone || phoneDigits.length < 7) {
+                showFormError("Please enter a valid official telephone / emergency phone number.", "phone");
+                return;
+            }
+
+            const emailRegex = /^[\w\.\+\-]+@[a-zA-Z0-9\-]+\.[a-zA-Z0-9\-\.]+$/;
+            if (!email || !emailRegex.test(email)) {
+                showFormError("Please enter a valid official work email address.", "email");
+                return;
+            }
+
+            if (!password || password.length < 8) {
+                showFormError("Password must be at least 8 characters long.", "password");
+                return;
+            }
+
+            if (!confirmPassword) {
+                showFormError("Please confirm your password.", "confirm_password");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showFormError("Passwords do not match. Please verify both password fields.", "confirm_password");
+                return;
+            }
+
+            // Lock submit button with spinner
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right: 6px;"></i> Submitting application...';
+            }
+
+            const payload = {
+                hospital_name: hospitalName,
+                type: facilityType,
+                registration_number: regNumber,
+                address: address,
+                latitude: latitude,
+                longitude: longitude,
+                contact_person: contactPerson,
+                phone: phone,
+                email: email,
+                password: password,
+                confirm_password: confirmPassword,
+                website_url_hp: hpVal
+            };
+
+            const headers = { 'Content-Type': 'application/json' };
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMeta && csrfMeta.content) {
+                headers['X-CSRF-Token'] = csrfMeta.content;
+            }
+
+            try {
+                const res = await fetch('/api/hospital/apply', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || 'Failed to submit application');
+                }
+
+                document.getElementById('apply-card').style.display = 'none';
+                document.getElementById('success-card').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                showFormError(err.message || 'An error occurred submitting application.', null);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right: 6px;"></i> Submit Registration Application';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initPickerMap();
+        });
+    </script>
+</body>
+</html>
